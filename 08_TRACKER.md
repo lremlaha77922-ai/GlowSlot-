@@ -97,7 +97,7 @@ Last updated: 2026-10-02  |  Current phase: **Phase 6B (DONE)**  |  Prompts: `12
 | 4C.4 | S24 Saved Addresses | DONE | Address list with add/edit/delete, reuses S07 modal |
 | 4C.5 | S25 Favourite Salons | DONE | List of bookmarked salons, links to S04 Salon Detail |
 | 4C.6 | S26 Wallet & Points | DONE | Points balance, conversion banner, transaction history |
-| 4C.7 | S27 Refer & Earn | DONE | Referral code, copy trigger, O10 native share |
+| 4C.7 | S27 Refer & Earn | DONE | Referral code, copy trigger, O10 native share, Have a Code card (REF-5) |
 | 4C.8 | S28 Settings | DONE | O07 Language picker, dark mode switch, notification toggles |
 | 4C.9 | S29 & S30 Support & Legal | DONE | S29 Help & FAQ accordion, S30 Terms of Service & Privacy Policy |
 | 4C.10 | Dialogs & Home Wiring | DONE | O07, O08, O09, O10; Home bell, avatar, points, refer wired |

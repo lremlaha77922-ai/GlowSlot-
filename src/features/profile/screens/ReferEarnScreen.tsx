@@ -25,7 +25,7 @@ export const ReferEarnScreen: React.FC<ReferEarnScreenProps> = ({ onBack }) => {
   const { user, updatePoints } = useSessionStore();
   const { showToast } = useUIStore();
 
-  const referralCode = `GLOW-${(user?.name || 'FRIEND').toUpperCase().slice(0, 4)}100`;
+  const referralCode = user?.referralCode || `GLOW-${(user?.name || 'FRIEND').toUpperCase().replace(/\s+/g, '').slice(0, 4)}100`;
   const referralLink = `https://glowslot.app/invite?ref=${referralCode}`;
 
   const [stats, setStats] = useState<{
@@ -42,6 +42,13 @@ export const ReferEarnScreen: React.FC<ReferEarnScreenProps> = ({ onBack }) => {
 
   const [copiedType, setCopiedType] = useState<'code' | 'link' | null>(null);
 
+  // States for entering a referral code later (REF-5, REF-8)
+  const [inputReferralCode, setInputReferralCode] = useState('');
+  const [inputError, setInputError] = useState('');
+  const [appliedCode, setAppliedCode] = useState<string | null>(() => {
+    return localStorage.getItem(`glowslot_applied_code_${user?.id || 'guest'}`);
+  });
+
   useEffect(() => {
     const loadStats = async () => {
       const data = await referralService.getReferralStats(user?.id);
@@ -49,6 +56,41 @@ export const ReferEarnScreen: React.FC<ReferEarnScreenProps> = ({ onBack }) => {
     };
     loadStats();
   }, [user?.id]);
+
+  const handleApplyReferralCode = async () => {
+    setInputError('');
+    const code = inputReferralCode.trim().toUpperCase();
+
+    if (!code) {
+      setInputError('Please enter a referral code.');
+      return;
+    }
+
+    if (code === referralCode) {
+      setInputError('You cannot refer yourself (Abuse Protection).');
+      return;
+    }
+
+    if (code.length < 6) {
+      setInputError('Invalid referral code length.');
+      return;
+    }
+
+    // Call service to record referral signup
+    const res = await referralService.recordReferralSignup(
+      code,
+      user?.email || 'new.user@glowslot.com',
+      user?.name || 'GlowSlot User'
+    );
+
+    if (res.success) {
+      localStorage.setItem(`glowslot_applied_code_${user?.id || 'guest'}`, code);
+      setAppliedCode(code);
+      showToast(`Referral code ${code} applied successfully!`);
+    } else {
+      setInputError(res.error || 'Failed to apply referral code.');
+    }
+  };
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(referralCode);
@@ -205,6 +247,51 @@ export const ReferEarnScreen: React.FC<ReferEarnScreenProps> = ({ onBack }) => {
             <Share2 size={16} />
             <span>Share Invite via WhatsApp / Socials</span>
           </Button>
+        </div>
+
+        {/* Have a Referral Code card (REF-5) */}
+        <div className="bg-surface rounded-card border border-border p-4 shadow-level-1 flex flex-col gap-3">
+          <h3 className="text-xs font-bold text-text uppercase tracking-wider flex items-center gap-1.5">
+            <Gift size={15} className="text-primary" /> Have a Referral Code?
+          </h3>
+          <p className="text-[11px] text-muted leading-relaxed">
+            If you skipped entering a code during signup, you can apply it here before your first booking to unlock rewards.
+          </p>
+
+          {appliedCode ? (
+            <div className="h-11 rounded-button bg-success/15 border border-success/30 px-3 flex items-center gap-2 text-xs text-success font-semibold">
+              <CheckCircle2 size={16} className="shrink-0" />
+              <span>Applied Code: <span className="font-mono font-bold tracking-wider">{appliedCode}</span></span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="e.g. GLOW-RAHU100"
+                  value={inputReferralCode}
+                  onChange={(e) => {
+                    setInputReferralCode(e.target.value.toUpperCase());
+                    setInputError('');
+                  }}
+                  className="flex-1 h-10 px-3 rounded-button border border-border bg-bg text-xs uppercase font-mono tracking-wider focus:outline-none focus:border-primary"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleApplyReferralCode}
+                  className="h-10 px-4 text-xs font-bold shrink-0"
+                >
+                  Apply Code
+                </Button>
+              </div>
+              {inputError && (
+                <span className="text-[10px] text-error font-semibold pl-1">
+                  {inputError}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Referred Friends Tracking List */}

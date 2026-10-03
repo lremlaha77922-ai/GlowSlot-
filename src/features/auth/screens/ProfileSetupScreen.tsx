@@ -3,8 +3,9 @@ import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
 import { useSessionStore } from '../../../store/useSessionStore';
 import { Gender } from '../../../types';
-import { User, MapPin, Check, ShieldCheck } from 'lucide-react';
+import { User, MapPin, Check, ShieldCheck, Gift } from 'lucide-react';
 import { useUIStore } from '../../../store/useUIStore';
+import { referralService } from '../../profile/services/referralService';
 
 interface ProfileSetupScreenProps {
   onComplete: () => void;
@@ -20,10 +21,33 @@ export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({
   const [gender, setGender] = useState<Gender>('male');
   const [locationGranted, setLocationGranted] = useState(false);
   const [error, setError] = useState('');
+  
+  // Referral states
+  const [referralCode, setReferralCode] = useState('');
+  const [referralError, setReferralError] = useState('');
+  const [isReferralValid, setIsReferralValid] = useState(false);
 
   const handleGrantLocation = () => {
     setLocationGranted(true);
     showToast('Location permission enabled!');
+  };
+
+  const handleReferralChange = (val: string) => {
+    setReferralCode(val.toUpperCase());
+    setReferralError('');
+    
+    if (!val) {
+      setIsReferralValid(false);
+      return;
+    }
+
+    // Support validation: Codes are alphanumeric/hyphen, at least 6 characters
+    if (val.length < 6) {
+      setReferralError('Referral code must be at least 6 characters long.');
+      setIsReferralValid(false);
+    } else {
+      setIsReferralValid(true);
+    }
   };
 
   const [isLoading, setIsLoading] = useState(false);
@@ -35,7 +59,22 @@ export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({
       return;
     }
 
+    if (referralCode && !isReferralValid) {
+      setReferralError('Please fix or clear the invalid referral code.');
+      return;
+    }
+
     setIsLoading(true);
+
+    if (referralCode && isReferralValid) {
+      await referralService.recordReferralSignup(
+        referralCode,
+        user?.email || 'new.user@glowslot.com',
+        name.trim()
+      );
+      showToast('Referral code applied successfully! Rs.100 off your first visit.');
+    }
+
     await setProfile(name.trim(), gender);
     setIsLoading(false);
     showToast(`Welcome to GlowSlot, ${name.trim()}!`);
@@ -94,6 +133,17 @@ export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({
             ))}
           </div>
         </div>
+
+        {/* Optional Referral Code field with inline validation per REF-4 */}
+        <Input
+          label="Referral Code (Optional)"
+          placeholder="e.g. GLOW-RAHU100"
+          value={referralCode}
+          onChange={(e) => handleReferralChange(e.target.value)}
+          leftIcon={<Gift size={16} />}
+          error={referralError}
+          className="uppercase"
+        />
 
         {/* Location Permission Card per scope */}
         <div className="bg-surface rounded-card border border-border p-4 shadow-xs flex flex-col gap-2.5">
