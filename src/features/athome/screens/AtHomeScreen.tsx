@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { ShieldCheck, Sparkles, Scissors, HeartHandshake, Smile, CheckCircle, Clock } from 'lucide-react';
 import { Button } from '../../../components/Button';
 import { formatMoney } from '../../../utils/money';
-import { useCartStore } from '../../../store/useCartStore';
 import { useUIStore } from '../../../store/useUIStore';
 
 interface AtHomeScreenProps {

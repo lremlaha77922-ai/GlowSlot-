@@ -5,7 +5,7 @@ import { Button } from '../../../components/Button';
 import { useUIStore } from '../../../store/useUIStore';
 import { useSessionStore } from '../../../store/useSessionStore';
 import { slotService } from '../../slots/services/slotService';
-import { paymentService } from '../../cart/services/paymentService';
+import { paymentService } from '../services/paymentService';
 import { bookingService } from '../../bookings/services/bookingService';
 import {
   ArrowLeft,

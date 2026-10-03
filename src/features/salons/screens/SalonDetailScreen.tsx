@@ -29,7 +29,7 @@ interface SalonDetailScreenProps {
   onBack: () => void;
   onSelectServiceForSlot: (salon: Salon, service: { id: string; name: string; durationMin: number; basePrice: number }) => void;
   onSelectSalon?: (salonId: string) => void;
-  onBookNowModal?: (salon: Salon) => void;
+  onBookNowModal?: (salon: Salon, initialSelectedServiceIds?: string[]) => void;
 }
 
 export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
@@ -100,21 +100,29 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
   };
 
   const handleSelectService = (srv: SalonServiceItem) => {
-    onSelectServiceForSlot(salon, {
-      id: srv.id,
-      name: srv.name,
-      durationMin: srv.durationMin,
-      basePrice: srv.basePrice,
-    });
+    if (onBookNowModal) {
+      onBookNowModal(salon, [srv.id]);
+    } else {
+      onSelectServiceForSlot(salon, {
+        id: srv.id,
+        name: srv.name,
+        durationMin: srv.durationMin,
+        basePrice: srv.basePrice,
+      });
+    }
   };
 
   const handleSelectPackage = (pkg: PackageItem) => {
-    onSelectServiceForSlot(salon, {
-      id: pkg.id,
-      name: pkg.name,
-      durationMin: pkg.durationMin,
-      basePrice: pkg.price,
-    });
+    if (onBookNowModal) {
+      onBookNowModal(salon, [pkg.id]);
+    } else {
+      onSelectServiceForSlot(salon, {
+        id: pkg.id,
+        name: pkg.name,
+        durationMin: pkg.durationMin,
+        basePrice: pkg.price,
+      });
+    }
   };
 
   const firstService = salon.services?.[0];

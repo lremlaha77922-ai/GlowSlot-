@@ -1,19 +1,19 @@
 import React from 'react';
 import { QuickService } from '../../../types';
-import { AddStepper } from '../../../components/AddStepper';
+import { Button } from '../../../components/Button';
 import { formatMoney } from '../../../utils/money';
-import { useCartStore } from '../../../store/useCartStore';
 import { useUIStore } from '../../../store/useUIStore';
 import { Clock, Scissors, Sparkles, HeartHandshake, Smile } from 'lucide-react';
 
 interface QuickServicesSectionProps {
   services: QuickService[];
+  onSelectSalon?: (salonId: string) => void;
 }
 
 export const QuickServicesSection: React.FC<QuickServicesSectionProps> = ({
   services,
+  onSelectSalon,
 }) => {
-  const { addItem, updateQty, getItemQty } = useCartStore();
   const { showToast } = useUIStore();
 
   const getServiceIcon = (category: string) => {
@@ -29,9 +29,13 @@ export const QuickServicesSection: React.FC<QuickServicesSectionProps> = ({
     }
   };
 
-  const handleAdd = (service: QuickService) => {
-    addItem(service);
-    showToast(`Added ${service.name} to cart`);
+  const handleBook = () => {
+    if (onSelectSalon) {
+      // Directs them to the main premium salon detail screen to book the service
+      onSelectSalon('luxe-cut-style');
+    } else {
+      showToast('Select a salon to book this service.');
+    }
   };
 
   return (
@@ -51,8 +55,6 @@ export const QuickServicesSection: React.FC<QuickServicesSectionProps> = ({
       {/* Horizontal scroll container with 140px wide cards */}
       <div className="flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar scroll-smooth">
         {services.map((service) => {
-          const qty = getItemQty(service.id);
-
           return (
             <div
               key={service.id}
@@ -107,14 +109,16 @@ export const QuickServicesSection: React.FC<QuickServicesSectionProps> = ({
                   </div>
                 </div>
 
-                {/* Morphing ADD button */}
-                <AddStepper
-                  qty={qty}
-                  onAdd={() => handleAdd(service)}
-                  onIncrement={() => updateQty(service.id, 1)}
-                  onDecrement={() => updateQty(service.id, -1)}
-                  className="w-full"
-                />
+                {/* Simple Book Now CTA */}
+                <Button
+                  onClick={handleBook}
+                  variant="primary"
+                  size="xs"
+                  fullWidth
+                  className="font-bold text-[11px] py-1 h-7 rounded-button"
+                >
+                  Book Slot
+                </Button>
               </div>
             </div>
           );

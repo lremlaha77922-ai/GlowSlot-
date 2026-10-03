@@ -29,7 +29,6 @@ interface BookingSuccessScreenProps {
   bookingId: string;
   onViewBooking: (bookingId: string) => void;
   onGoHome: () => void;
-  onVisitShop: () => void;
   onViewAppointments: () => void;
 }
 
@@ -37,7 +36,6 @@ export const BookingSuccessScreen: React.FC<BookingSuccessScreenProps> = ({
   bookingId,
   onViewBooking,
   onGoHome,
-  onVisitShop,
   onViewAppointments,
 }) => {
   const [booking, setBooking] = useState<Booking | null>(null);
@@ -204,28 +202,6 @@ export const BookingSuccessScreen: React.FC<BookingSuccessScreenProps> = ({
               </span>
             </div>
           </div>
-        </div>
-
-        {/* 1. SALON SHOP PORTAL */}
-        <div className="bg-surface rounded-card border border-border p-4 shadow-xs flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary-soft text-primary flex items-center justify-center shrink-0">
-              <Store size={20} />
-            </div>
-            <div>
-              <span className="text-[10px] text-muted uppercase font-bold block">Exclusive Products</span>
-              <span className="text-xs font-bold text-text block">
-                Visit {salonName} Shop Portal
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={onVisitShop}
-            className="px-3 py-2 bg-primary-soft text-primary rounded-button font-bold text-xs flex items-center gap-1.5 hover:bg-primary/20 transition-colors cursor-pointer"
-          >
-            <span>Open Shop</span>
-            <ExternalLink size={14} />
-          </button>
         </div>
 
         {/* 2. QUICK ACTIONS */}

@@ -3,7 +3,7 @@ import { authService } from '../features/auth/services/authService';
 import { salonService } from '../features/salons/services/salonService';
 import { slotService } from '../features/slots/services/slotService';
 import { bookingService } from '../features/bookings/services/bookingService';
-import { couponService } from '../features/cart/services/couponService';
+import { couponService } from '../features/bookings/services/couponService';
 import { supabase } from '../lib/supabase';
 
 describe('E2E Integration Test: User Lifecycle & Booking Journey (P6A)', () => {

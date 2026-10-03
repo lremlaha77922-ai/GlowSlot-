@@ -2,21 +2,17 @@ import React from 'react';
 import {
   MapPin,
   ChevronDown,
-  ShoppingBag,
   Bell,
   Sparkles,
   Globe,
   Sun,
   Moon,
-  User,
 } from 'lucide-react';
-import { useCartStore } from '../../../store/useCartStore';
 import { useSessionStore } from '../../../store/useSessionStore';
 import { useUIStore } from '../../../store/useUIStore';
 
 interface HomeHeaderProps {
   onOpenLocation: () => void;
-  onOpenCart: () => void;
   onOpenNotifications: () => void;
   onOpenProfile: () => void;
   onOpenPoints: () => void;
@@ -24,17 +20,13 @@ interface HomeHeaderProps {
 
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onOpenLocation,
-  onOpenCart,
   onOpenNotifications,
   onOpenProfile,
   onOpenPoints,
 }) => {
   const { user } = useSessionStore();
-  const { getTotalCount } = useCartStore();
-  const { selectedLocation, theme, toggleTheme, language, toggleLanguage, showToast } =
+  const { selectedLocation, theme, toggleTheme, language, toggleLanguage } =
     useUIStore();
-
-  const cartCount = getTotalCount();
 
   return (
     <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-border/80 px-4 pt-3 pb-3">
@@ -80,20 +72,6 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           >
             <Bell size={18} />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accent" />
-          </button>
-
-          {/* Cart Icon with Badge */}
-          <button
-            onClick={onOpenCart}
-            className="relative w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center hover:brightness-105 active:scale-95 transition-all shadow-level-1 cursor-pointer"
-            aria-label={`Open Cart (${cartCount} items)`}
-          >
-            <ShoppingBag size={18} />
-            {cartCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] px-1 rounded-full bg-accent text-white text-[11px] font-bold flex items-center justify-center shadow-xs animate-in zoom-in-50 duration-150 tabular-nums">
-                {cartCount}
-              </span>
-            )}
           </button>
         </div>
       </div>

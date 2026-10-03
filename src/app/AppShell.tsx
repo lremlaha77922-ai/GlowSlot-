@@ -8,16 +8,11 @@ import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { SalonListScreen } from '../features/salons/screens/SalonListScreen';
 import { SalonDetailScreen } from '../features/salons/screens/SalonDetailScreen';
 import { SlotPickerScreen } from '../features/slots/screens/SlotPickerScreen';
-import { CartScreen } from '../features/cart/screens/CartScreen';
-import { CheckoutScreen } from '../features/cart/screens/CheckoutScreen';
 import { BookingSuccessScreen } from '../features/bookings/screens/BookingSuccessScreen';
 import { BookingsListScreen } from '../features/bookings/screens/BookingsListScreen';
 import { BookingDetailScreen } from '../features/bookings/screens/BookingDetailScreen';
 import { BookingSummaryScreen } from '../features/bookings/screens/BookingSummaryScreen';
 import { AtHomeScreen } from '../features/athome/screens/AtHomeScreen';
-import { ShopListScreen } from '../features/shop/screens/ShopListScreen';
-import { ProductDetailScreen } from '../features/shop/screens/ProductDetailScreen';
-import { WishlistScreen } from '../features/shop/screens/WishlistScreen';
 import { NotificationsScreen } from '../features/notifications/screens/NotificationsScreen';
 import { ProfileMainScreen } from '../features/profile/screens/ProfileMainScreen';
 import { EditProfileScreen } from '../features/profile/screens/EditProfileScreen';
@@ -38,7 +33,6 @@ import { OfflineBanner } from '../components/OfflineBanner';
 import { ToastContainer } from '../components/Toast';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { useUIStore } from '../store/useUIStore';
-import { useCartStore } from '../store/useCartStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { Salon, SlotItem, Booking } from '../types';
 import { mockSalons } from '../data/mockData';
@@ -55,13 +49,9 @@ type ViewMode =
   | 'tabs'
   | 'salonDetail'
   | 'slotPicker'
-  | 'cart'
-  | 'checkout'
   | 'bookingSuccess'
   | 'bookingDetail'
   | 'bookingSummary'
-  | 'productDetail'
-  | 'wishlist'
   | 'notifications'
   | 'profile'
   | 'editProfile'
@@ -86,18 +76,18 @@ export const AppShell: React.FC = () => {
     showToast,
   } = useUIStore();
 
-  const { addItemWithSlot, addItem } = useCartStore();
   const { user, returnTarget, setReturnTarget, setUser } = useSessionStore();
 
   const [currentView, setCurrentView] = useState<ViewMode>('splash');
   const [selectedSalonId, setSelectedSalonId] = useState<string | null>(null);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [reschedulingBooking, setReschedulingBooking] = useState<Booking | null>(null);
   const [bookingModalSalon, setBookingModalSalon] = useState<Salon | null>(null);
+  const [bookingModalInitialServiceIds, setBookingModalInitialServiceIds] = useState<string[] | undefined>(undefined);
 
-  const handleOpenBookModal = (salon: Salon) => {
+  const handleOpenBookModal = (salon: Salon, initialSelectedServiceIds?: string[]) => {
     setBookingModalSalon(salon);
+    setBookingModalInitialServiceIds(initialSelectedServiceIds);
   };
 
   const [bookingSummaryContext, setBookingSummaryContext] = useState<{
@@ -152,38 +142,8 @@ export const AppShell: React.FC = () => {
 
   const handleBookingSummaryConfirmPayment = (summaryData: any) => {
     if (summaryData.bookingId) {
-      setLatestBookingId(summaryData.bookingId);
+      setSelectedBookingId(summaryData.bookingId);
       setCurrentView('bookingSuccess');
-    } else {
-      const combinedName = summaryData.services.map((s: any) => s.name).join(' + ');
-      const totalDuration = summaryData.services.reduce((sum: number, s: any) => sum + s.durationMin, 0);
-
-      const serviceNameFinal = summaryData.specialist
-        ? `${combinedName} (Stylist: ${summaryData.specialist.name})`
-        : combinedName;
-
-      addItemWithSlot(
-        {
-          id: summaryData.services.map((s: any) => s.id).join('-'),
-          name: serviceNameFinal,
-          durationMin: totalDuration,
-          basePrice: summaryData.pricingSummary.total,
-        },
-        {
-          slotId: summaryData.slot.id,
-          salonId: summaryData.salon.id,
-          salonName: summaryData.salon.name,
-          serviceName: serviceNameFinal,
-          date: summaryData.slot.date,
-          time: summaryData.slot.time,
-          price: summaryData.pricingSummary.total,
-          isFree: summaryData.slot.isFree,
-          isPeak: summaryData.slot.isPeak,
-        }
-      );
-
-      showToast(`Time slot ${summaryData.slot.time} on ${summaryData.slot.date} locked!`);
-      setCurrentView('checkout');
     }
   };
 
@@ -271,11 +231,6 @@ export const AppShell: React.FC = () => {
     setCurrentView('salonDetail');
   };
 
-  const handleOpenProduct = (productId: string) => {
-    setSelectedProductId(productId);
-    setCurrentView('productDetail');
-  };
-
   const handleSelectServiceForSlot = (
     salon: Salon,
     service: { id: string; name: string; durationMin: number; basePrice: number }
@@ -334,24 +289,25 @@ export const AppShell: React.FC = () => {
       return;
     }
 
-    addItemWithSlot(service, {
-      slotId: slot.id,
-      salonId: salon.id,
-      salonName: salon.name,
-      serviceName: service.name,
-      date: slot.date,
-      time: slot.time,
-      price: slot.price,
-      isFree: slot.isFree,
-      isPeak: slot.isPeak,
+    setBookingSummaryContext({
+      salon,
+      services: [service],
+      specialist: null,
+      slot,
+      customerDetails: {
+        name: user?.name || 'Aarav Sharma',
+        phone: user?.phone || '+91 98765 43210',
+        email: user?.email || 'aarav@glowslot.com',
+      },
+      pricingSummary: {
+        subtotal: service.basePrice,
+        discount: 0,
+        total: service.basePrice,
+        deposit: Math.round(service.basePrice * 0.25),
+        balanceAtSalon: service.basePrice - Math.round(service.basePrice * 0.25),
+      },
     });
-    setCurrentView('cart');
-  };
-
-  const handleProceedToCheckout = () => {
-    if (requireAuth('checkout')) {
-      setCurrentView('checkout');
-    }
+    setCurrentView('bookingSummary');
   };
 
   const handleStartReschedule = (booking: Booking) => {
@@ -377,22 +333,10 @@ export const AppShell: React.FC = () => {
   };
 
   const handleRebook = (booking: Booking) => {
-    booking.services.forEach((s) => {
-      addItem({
-        id: `rebook-${Date.now()}-${s.name}`,
-        name: s.name,
-        category: 'Grooming',
-        durationMin: s.durationMin,
-        price: s.price,
-      });
-    });
-    showToast(`Added ${booking.services.length} services to cart.`);
-    setCurrentView('cart');
-  };
-
-  const handleCheckoutSuccess = (bookingId: string) => {
-    setSelectedBookingId(bookingId);
-    setCurrentView('bookingSuccess');
+    const salon =
+      mockSalons.find((s) => s.name === booking.salonName) || mockSalons[0];
+    handleOpenSalon(salon.id);
+    showToast(`Welcome back to ${salon.name}! Select services to rebook.`);
   };
 
   return (
@@ -440,21 +384,6 @@ export const AppShell: React.FC = () => {
           <ProfileSetupScreen onComplete={handlePostAuthNavigate} />
         )}
 
-        {/* Cart & Checkout */}
-        {currentView === 'cart' && (
-          <CartScreen
-            onBack={() => setCurrentView('tabs')}
-            onCheckout={handleProceedToCheckout}
-          />
-        )}
-
-        {currentView === 'checkout' && (
-          <CheckoutScreen
-            onBack={() => setCurrentView('cart')}
-            onSuccess={handleCheckoutSuccess}
-          />
-        )}
-
         {currentView === 'bookingSuccess' && selectedBookingId && (
           <BookingSuccessScreen
             bookingId={selectedBookingId}
@@ -464,10 +393,6 @@ export const AppShell: React.FC = () => {
             }}
             onGoHome={() => {
               setActiveTab('home');
-              setCurrentView('tabs');
-            }}
-            onVisitShop={() => {
-              setActiveTab('shop');
               setCurrentView('tabs');
             }}
             onViewAppointments={() => {
@@ -557,25 +482,7 @@ export const AppShell: React.FC = () => {
           />
         )}
 
-        {/* Shop & Wishlist */}
-        {currentView === 'productDetail' && selectedProductId && (
-          <ProductDetailScreen
-            productId={selectedProductId}
-            onBack={() => setCurrentView('tabs')}
-            onOpenCart={() => setCurrentView('cart')}
-          />
-        )}
 
-        {currentView === 'wishlist' && (
-          <WishlistScreen
-            onBack={() => setCurrentView('tabs')}
-            onSelectProduct={handleOpenProduct}
-            onExploreShop={() => {
-              setActiveTab('shop');
-              setCurrentView('tabs');
-            }}
-          />
-        )}
 
         {/* Notifications & Profile Ecosystem (S21 to S30) */}
         {currentView === 'notifications' && (
@@ -672,7 +579,6 @@ export const AppShell: React.FC = () => {
               {activeTab === 'home' && (
                 <HomeScreen
                   onOpenLocation={() => setIsLocationSheetOpen(true)}
-                  onOpenCart={() => setCurrentView('cart')}
                   onSelectSalon={handleOpenSalon}
                   onBookNowModal={handleOpenBookModal}
                   onOpenNotifications={() => setCurrentView('notifications')}
@@ -743,8 +649,12 @@ export const AppShell: React.FC = () => {
         {bookingModalSalon && (
           <BookServiceModal
             isOpen={Boolean(bookingModalSalon)}
-            onClose={() => setBookingModalSalon(null)}
+            onClose={() => {
+              setBookingModalSalon(null);
+              setBookingModalInitialServiceIds(undefined);
+            }}
             salon={bookingModalSalon}
+            initialSelectedServiceIds={bookingModalInitialServiceIds}
             onContinue={handleBookModalContinue}
             onConfirmBooking={handleConfirmBooking}
           />

@@ -42,6 +42,7 @@ export interface BookServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   salon: Salon;
+  initialSelectedServiceIds?: string[];
   onContinue: (
     salon: Salon,
     selectedServices: SalonServiceItem[],
@@ -96,6 +97,7 @@ export const BookServiceModal: React.FC<BookServiceModalProps> = ({
   isOpen,
   onClose,
   salon,
+  initialSelectedServiceIds,
   onContinue,
   onConfirmBooking,
 }) => {
@@ -106,9 +108,18 @@ export const BookServiceModal: React.FC<BookServiceModalProps> = ({
   const specialists = salon.specialists || defaultSpecialists;
 
   // 1. Multi-service selection state
-  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(
-    services.length > 0 ? [services[0].id] : []
-  );
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+
+  // Sync initialSelectedServiceIds when modal opens or prop changes
+  useEffect(() => {
+    if (isOpen) {
+      if (initialSelectedServiceIds && initialSelectedServiceIds.length > 0) {
+        setSelectedServiceIds(initialSelectedServiceIds);
+      } else if (services.length > 0) {
+        setSelectedServiceIds([services[0].id]);
+      }
+    }
+  }, [isOpen, initialSelectedServiceIds, services]);
 
   // 2. Specialist selection state (null = "Any Specialist")
   const [selectedSpecialist, setSelectedSpecialist] = useState<SpecialistItem | null>(

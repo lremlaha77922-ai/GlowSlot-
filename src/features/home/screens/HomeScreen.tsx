@@ -4,6 +4,7 @@ import { PromoCarousel } from '../components/PromoCarousel';
 import { QuickServicesSection } from '../components/QuickServicesSection';
 import { LastMinuteDealsSection } from '../components/LastMinuteDealsSection';
 import { SalonDiscoverySections } from '../components/SalonDiscoverySections';
+import { PromotionalReelsSection } from '../components/PromotionalReelsSection';
 import { PopularSalonsSection } from '../components/PopularSalonsSection';
 import { ReferralCard } from '../components/ReferralCard';
 import { PullToRefresh } from '../../../components/PullToRefresh';
@@ -12,9 +13,8 @@ import { festivalBanners, discountBanners, mockQuickServices, mockSalons } from 
 
 interface HomeScreenProps {
   onOpenLocation: () => void;
-  onOpenCart: () => void;
   onSelectSalon: (salonId: string) => void;
-  onBookNowModal?: (salon: Salon) => void;
+  onBookNowModal?: (salon: any) => void;
   onOpenNotifications?: () => void;
   onOpenProfile?: () => void;
   onOpenPoints?: () => void;
@@ -23,7 +23,6 @@ interface HomeScreenProps {
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenLocation,
-  onOpenCart,
   onSelectSalon,
   onBookNowModal,
   onOpenNotifications = () => {},
@@ -47,7 +46,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         {/* Top App Bar (Header with points, search, location, profile, bell, cart) */}
         <HomeHeader
           onOpenLocation={onOpenLocation}
-          onOpenCart={onOpenCart}
           onOpenNotifications={onOpenNotifications}
           onOpenProfile={onOpenProfile}
           onOpenPoints={onOpenPoints}
@@ -57,7 +55,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <PromoCarousel sectionTitle="Festival Offers" banners={festivalBanners} />
 
         {/* Quick Services Section */}
-        <QuickServicesSection services={mockQuickServices} />
+        <QuickServicesSection services={mockQuickServices} onSelectSalon={onSelectSalon} />
 
         {/* SECTION 2 — Special Discounts Carousel */}
         <PromoCarousel sectionTitle="Special Discounts" banners={discountBanners} />
@@ -74,6 +72,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           onSelectSalon={onSelectSalon}
           onBookNow={onBookNowModal}
         />
+
+        {/* Salon Promotional Reels Section */}
+        <PromotionalReelsSection onSelectSalon={onSelectSalon} />
 
         {/* Popular Neighborhood Salons List */}
         <PopularSalonsSection
