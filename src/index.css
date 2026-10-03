@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@import "./theme/tokens.css";
+
+@theme {
+  --color-primary: var(--color-primary);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-accent: var(--color-accent);
+  --color-deal: var(--color-deal);
+  --color-success: var(--color-success);
+  --color-error: var(--color-error);
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-text: var(--color-text);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+
+  --font-sans: var(--font-sans);
+  --font-hindi: var(--font-hindi);
+
+  --radius-card: var(--radius-card);
+  --radius-button: var(--radius-button);
+  --radius-input: var(--radius-input);
+  --radius-sheet: var(--radius-sheet);
+  --radius-chip: var(--radius-chip);
+  --radius-avatar: var(--radius-avatar);
+
+  --shadow-level-0: var(--shadow-level-0);
+  --shadow-level-1: var(--shadow-level-1);
+  --shadow-level-2: var(--shadow-level-2);
+}
+
+@layer utilities {
+  .gradient-free-slot {
+    background: linear-gradient(135deg, var(--color-success) 0%, #14B8A6 100%);
+  }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}

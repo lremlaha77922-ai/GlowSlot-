@@ -1,0 +1,52 @@
+:root {
+  /* Light Color Tokens */
+  --color-primary: #4F46E5;
+  --color-primary-soft: #EEF0FF;
+  --color-accent: #FF6B57;
+  --color-deal: #F59E0B;
+  --color-success: #0D9488;
+  --color-error: #DC2626;
+  --color-bg: #F8F7FC;
+  --color-surface: #FFFFFF;
+  --color-text: #1F2433;
+  --color-muted: #6B7280;
+  --color-border: #E5E7EB;
+
+  /* Elevation */
+  --shadow-level-0: none;
+  --shadow-level-1: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-level-2: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  /* Radius */
+  --radius-card: 16px;
+  --radius-button: 12px;
+  --radius-input: 12px;
+  --radius-sheet: 24px;
+  --radius-chip: 9999px;
+  --radius-avatar: 9999px;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-hindi: 'Noto Sans Devanagari', 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+.dark,
+[data-theme="dark"] {
+  /* Dark Color Tokens */
+  --color-primary: #818CF8;
+  --color-primary-soft: #26264A;
+  --color-accent: #FF8A78;
+  --color-deal: #FBBF24;
+  --color-success: #2DD4BF;
+  --color-error: #F87171;
+  --color-bg: #0F111A;
+  --color-surface: #1A1D2B;
+  --color-text: #F3F4F8;
+  --color-muted: #9CA3AF;
+  --color-border: #2B2F40;
+
+  /* Elevation Dark */
+  --shadow-level-0: none;
+  --shadow-level-1: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-level-2: 0 8px 24px rgba(0, 0, 0, 0.4);
+}

@@ -1,0 +1,6 @@
+{
+  "name": "GlowSlot",
+  "description": "GlowSlot - Premium Salon & Grooming Booking Platform",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
