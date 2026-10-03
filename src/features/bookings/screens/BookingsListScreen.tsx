@@ -16,7 +16,9 @@ import {
 } from 'lucide-react';
 import { CancelBookingSheet } from '../components/CancelBookingSheet';
 import { WriteReviewModal } from '../components/WriteReviewModal';
+import { PullToRefresh } from '../../../components/PullToRefresh';
 import { useUIStore } from '../../../store/useUIStore';
+import { useSessionStore } from '../../../store/useSessionStore';
 
 interface BookingsListScreenProps {
   onSelectBooking: (bookingId: string) => void;
@@ -36,21 +38,37 @@ export const BookingsListScreen: React.FC<BookingsListScreenProps> = ({
   const [cancellingBooking, setCancellingBooking] = useState<Booking | null>(null);
   const [reviewingBooking, setReviewingBooking] = useState<Booking | null>(null);
 
+  const { user } = useSessionStore();
   const { showToast } = useUIStore();
 
-  const loadBookings = () => {
-    const list = bookingService.getBookings();
+  const loadBookings = async () => {
+    const list = await bookingService.getBookings(user?.id);
     setBookings(list);
   };
 
   useEffect(() => {
     loadBookings();
-  }, []);
+
+    if (user?.id) {
+      const sub = bookingService.subscribeToBookings(user.id, () => {
+        loadBookings();
+      });
+      return () => {
+        sub.unsubscribe();
+      };
+    }
+  }, [user?.id]);
 
   const filtered = bookings.filter((b) => b.status === activeSegment);
 
+  const handleRefresh = async () => {
+    await loadBookings();
+    showToast('Bookings updated.');
+  };
+
   return (
-    <div className="flex-1 pb-24 bg-bg text-text">
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="flex-1 pb-24 bg-bg text-text">
       {/* Top App Bar with Segments */}
       <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-border/80 px-4 pt-3 pb-2.5">
         <h1 className="text-base font-bold text-text mb-3">My Bookings (S10)</h1>
@@ -225,6 +243,7 @@ export const BookingsListScreen: React.FC<BookingsListScreenProps> = ({
           }}
         />
       )}
-    </div>
+      </div>
+    </PullToRefresh>
   );
 };

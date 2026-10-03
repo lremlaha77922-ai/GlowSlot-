@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product, ProductCategory } from '../../../types';
-import { mockProducts } from '../../../data/mockProducts';
+import { productService } from '../services/productService';
 import { formatMoney } from '../../../utils/money';
 import { Chip } from '../../../components/Chip';
 import { Button } from '../../../components/Button';
+import { EmptyState } from '../../../components/EmptyState';
+import { PullToRefresh } from '../../../components/PullToRefresh';
 import { useWishlistStore } from '../../../store/useWishlistStore';
 import { useCartStore } from '../../../store/useCartStore';
+import { useSessionStore } from '../../../store/useSessionStore';
 import { useUIStore } from '../../../store/useUIStore';
 import { Star, Heart, Plus, Minus, ShoppingBag } from 'lucide-react';
 
@@ -21,17 +24,24 @@ export const ShopListScreen: React.FC<ShopListScreenProps> = ({
   onOpenWishlist,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<'All' | ProductCategory>('All');
+  const [products, setProducts] = useState<Product[]>([]);
+  const { user } = useSessionStore();
   const { wishlistIds, toggleWishlist } = useWishlistStore();
   const { addProduct, getItemQty, updateQty } = useCartStore();
   const { showToast } = useUIStore();
 
-  const filteredProducts = mockProducts.filter((p) =>
-    selectedCategory === 'All' ? true : p.category === selectedCategory
-  );
+  const loadProducts = async () => {
+    const list = await productService.list(selectedCategory);
+    setProducts(list);
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, [selectedCategory]);
 
   const handleToggleWishlist = (product: Product, e: React.MouseEvent) => {
     e.stopPropagation();
-    const added = toggleWishlist(product.id);
+    const added = toggleWishlist(product.id, user?.id);
     showToast(
       added
         ? `Added ${product.name} to wishlist`
@@ -45,8 +55,16 @@ export const ShopListScreen: React.FC<ShopListScreenProps> = ({
     showToast(`Added ${product.name} to cart.`);
   };
 
+  const handleRefresh = async () => {
+    await loadProducts();
+    showToast('Shop products and stock updated.');
+  };
+
+  const filteredProducts = products;
+
   return (
-    <div className="flex-1 pb-24 bg-bg text-text">
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="flex-1 pb-24 bg-bg text-text">
       {/* Top Header */}
       <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-border/80 px-4 pt-3 pb-2.5">
         <div className="flex items-center justify-between mb-2.5">
@@ -89,115 +107,126 @@ export const ShopListScreen: React.FC<ShopListScreenProps> = ({
 
       {/* 2-Column Product Grid per Design.md 8.10 */}
       <main className="p-4">
-        <div className="grid grid-cols-2 gap-3">
-          {filteredProducts.map((product) => {
-            const isWishlisted = wishlistIds.includes(product.id);
-            const qty = getItemQty(product.id);
+        {filteredProducts.length === 0 ? (
+          <EmptyState
+            icon={<ShoppingBag size={32} />}
+            title="No products found"
+            helperText="We couldn't find any items in this category right now."
+            actionLabel="View All Products"
+            onAction={() => setSelectedCategory('All')}
+          />
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {filteredProducts.map((product) => {
+              const isWishlisted = wishlistIds.includes(product.id);
+              const qty = getItemQty(product.id);
 
-            return (
-              <div
-                key={product.id}
-                onClick={() => onSelectProduct(product.id)}
-                className="bg-surface rounded-card border border-border/80 shadow-level-1 overflow-hidden flex flex-col justify-between cursor-pointer hover:border-primary/40 hover:shadow-level-2 transition-all relative"
-              >
-                {/* Wishlist Heart Button top-right per Design.md 8.10 */}
-                <button
-                  onClick={(e) => handleToggleWishlist(product, e)}
-                  className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-black/40 backdrop-blur-xs text-white hover:text-accent transition-colors cursor-pointer"
-                  aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+              return (
+                <div
+                  key={product.id}
+                  onClick={() => onSelectProduct(product.id)}
+                  className="bg-surface rounded-card border border-border/80 shadow-level-1 overflow-hidden flex flex-col justify-between cursor-pointer hover:border-primary/40 hover:shadow-level-2 transition-all relative"
                 >
-                  <Heart
-                    size={15}
-                    className={isWishlisted ? 'fill-accent text-accent' : ''}
-                  />
-                </button>
+                  {/* Wishlist Heart Button top-right per Design.md 8.10 */}
+                  <button
+                    onClick={(e) => handleToggleWishlist(product, e)}
+                    className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-black/40 backdrop-blur-xs text-white hover:text-accent transition-colors cursor-pointer"
+                    aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                  >
+                    <Heart
+                      size={15}
+                      className={isWishlisted ? 'fill-accent text-accent' : ''}
+                    />
+                  </button>
 
-                {/* Square Product Image */}
-                <div className="w-full aspect-square bg-muted/20 overflow-hidden relative">
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    loading="lazy"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-
-                {/* Details */}
-                <div className="p-3 flex-1 flex flex-col justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted block">
-                      {product.brand}
-                    </span>
-                    <h3 className="text-xs font-bold text-text line-clamp-2 mt-0.5" title={product.name}>
-                      {product.name}
-                    </h3>
+                  {/* Square Product Image */}
+                  <div className="w-full aspect-square bg-muted/20 overflow-hidden relative">
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
                   </div>
 
-                  <div className="mt-2.5">
-                    {/* Rating */}
-                    <div className="flex items-center gap-1 text-[11px] mb-1.5">
-                      <div className="flex items-center gap-0.5 font-bold text-text">
-                        <Star size={11} className="fill-deal text-deal" />
-                        <span>{product.rating}</span>
-                      </div>
-                      <span className="text-muted text-[10px]">
-                        ({product.reviewCount})
+                  {/* Details */}
+                  <div className="p-3 flex-1 flex flex-col justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted block">
+                        {product.brand}
                       </span>
+                      <h3 className="text-xs font-bold text-text line-clamp-2 mt-0.5" title={product.name}>
+                        {product.name}
+                      </h3>
                     </div>
 
-                    {/* Price & Stepper / ADD */}
-                    <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-border">
-                      <div>
-                        <span className="text-xs font-bold text-primary tabular-nums block">
-                          {formatMoney(product.price)}
+                    <div className="mt-2.5">
+                      {/* Rating */}
+                      <div className="flex items-center gap-1 text-[11px] mb-1.5">
+                        <div className="flex items-center gap-0.5 font-bold text-text">
+                          <Star size={11} className="fill-deal text-deal" />
+                          <span>{product.rating}</span>
+                        </div>
+                        <span className="text-muted text-[10px]">
+                          ({product.reviewCount})
                         </span>
-                        {product.originalPrice && (
-                          <span className="text-[10px] text-muted line-through tabular-nums block -mt-0.5">
-                            {formatMoney(product.originalPrice)}
+                      </div>
+
+                      {/* Price & Stepper / ADD */}
+                      <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-border">
+                        <div>
+                          <span className="text-xs font-bold text-primary tabular-nums block">
+                            {formatMoney(product.price)}
                           </span>
+                          {product.originalPrice && (
+                            <span className="text-[10px] text-muted line-through tabular-nums block -mt-0.5">
+                              {formatMoney(product.originalPrice)}
+                            </span>
+                          )}
+                        </div>
+
+                        {qty > 0 ? (
+                          <div
+                            className="h-7 px-1.5 rounded-button bg-surface border border-primary flex items-center gap-1.5 shadow-2xs"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={() => updateQty(product.id, -1)}
+                              className="w-4 h-4 flex items-center justify-center text-primary cursor-pointer"
+                            >
+                              <Minus size={11} />
+                            </button>
+                            <span className="text-xs font-bold text-primary tabular-nums">
+                              {qty}
+                            </span>
+                            <button
+                              onClick={() => updateQty(product.id, 1)}
+                              className="w-4 h-4 flex items-center justify-center text-primary cursor-pointer"
+                            >
+                              <Plus size={11} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={(e) => handleAddToCart(product, e)}
+                            className="h-7 px-2.5 rounded-button bg-primary text-white text-xs font-bold hover:brightness-105 transition-all cursor-pointer shadow-2xs"
+                          >
+                            ADD
+                          </button>
                         )}
                       </div>
-
-                      {qty > 0 ? (
-                        <div
-                          className="h-7 px-1.5 rounded-button bg-surface border border-primary flex items-center gap-1.5 shadow-2xs"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            onClick={() => updateQty(product.id, -1)}
-                            className="w-4 h-4 flex items-center justify-center text-primary cursor-pointer"
-                          >
-                            <Minus size={11} />
-                          </button>
-                          <span className="text-xs font-bold text-primary tabular-nums">
-                            {qty}
-                          </span>
-                          <button
-                            onClick={() => updateQty(product.id, 1)}
-                            className="w-4 h-4 flex items-center justify-center text-primary cursor-pointer"
-                          >
-                            <Plus size={11} />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={(e) => handleAddToCart(product, e)}
-                          className="h-7 px-2.5 rounded-button bg-primary text-white text-xs font-bold hover:brightness-105 transition-all cursor-pointer shadow-2xs"
-                        >
-                          ADD
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </main>
-    </div>
+      </div>
+    </PullToRefresh>
   );
 };

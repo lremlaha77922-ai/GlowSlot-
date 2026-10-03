@@ -71,7 +71,9 @@ export const OtpVerifyScreen: React.FC<OtpVerifyScreenProps> = ({
     }
   };
 
-  const handleVerify = (e?: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleVerify = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const code = digits.join('');
     if (code.length !== 6) {
@@ -79,9 +81,13 @@ export const OtpVerifyScreen: React.FC<OtpVerifyScreenProps> = ({
       return;
     }
 
-    const result = verifyOtp(code);
+    setIsLoading(true);
+    setError('');
+    const result = await verifyOtp(code);
+    setIsLoading(false);
+
     if (!result.success) {
-      setError('Invalid OTP code. Try mock code: 123456');
+      setError(result.error || 'Invalid OTP code. Try mock code: 123456');
       return;
     }
 

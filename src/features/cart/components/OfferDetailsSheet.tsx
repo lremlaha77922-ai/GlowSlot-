@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sheet } from '../../../components/Sheet';
 import { Coupon } from '../../../types';
+import { couponService } from '../services/couponService';
 import { mockCoupons } from '../../../data/mockCoupons';
 import { formatMoney } from '../../../utils/money';
 import { Tag, Check, AlertCircle } from 'lucide-react';
@@ -18,6 +19,14 @@ export const OfferDetailsSheet: React.FC<OfferDetailsSheetProps> = ({
   subtotalPaise,
   onSelectCoupon,
 }) => {
+  const [coupons, setCoupons] = useState<Coupon[]>(mockCoupons);
+
+  useEffect(() => {
+    if (isOpen) {
+      couponService.getCoupons().then((list) => setCoupons(list));
+    }
+  }, [isOpen]);
+
   return (
     <Sheet isOpen={isOpen} onClose={onClose} title="Available Coupons & Offers">
       <div className="flex flex-col gap-3 pb-4">
@@ -26,7 +35,7 @@ export const OfferDetailsSheet: React.FC<OfferDetailsSheetProps> = ({
         </p>
 
         <div className="divide-y divide-border">
-          {mockCoupons.map((coupon) => {
+          {coupons.map((coupon) => {
             const isEligible = !coupon.isExpired && subtotalPaise >= coupon.minOrderPaise;
 
             return (
@@ -44,17 +53,20 @@ export const OfferDetailsSheet: React.FC<OfferDetailsSheetProps> = ({
                     <span className="text-[10px] font-semibold text-error flex items-center gap-1">
                       <AlertCircle size={11} /> Expired
                     </span>
-                  ) : (
+                  ) : isEligible ? (
                     <button
-                      disabled={!isEligible}
                       onClick={() => {
                         onSelectCoupon(coupon);
                         onClose();
                       }}
-                      className="px-3 py-1 text-xs font-bold rounded-button bg-primary text-white hover:brightness-105 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      className="px-3 py-1 rounded-button bg-primary text-white text-xs font-bold hover:brightness-110 transition-all cursor-pointer shadow-2xs"
                     >
-                      Apply
+                      APPLY
                     </button>
+                  ) : (
+                    <span className="text-[10px] text-muted font-medium">
+                      Min. {formatMoney(coupon.minOrderPaise)}
+                    </span>
                   )}
                 </div>
 
@@ -62,12 +74,6 @@ export const OfferDetailsSheet: React.FC<OfferDetailsSheetProps> = ({
                 <p className="text-[11px] text-muted leading-relaxed">
                   {coupon.description}
                 </p>
-
-                {!coupon.isExpired && subtotalPaise < coupon.minOrderPaise && (
-                  <span className="text-[10px] text-deal font-medium">
-                    Add services worth {formatMoney(coupon.minOrderPaise - subtotalPaise)} more to unlock.
-                  </span>
-                )}
               </div>
             );
           })}

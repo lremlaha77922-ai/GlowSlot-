@@ -120,6 +120,9 @@ export interface UserSession {
   gender?: Gender;
   points: number;
   isNewUser?: boolean;
+  email?: string;
+  referralCode?: string;
+  avatarUrl?: string;
 }
 
 export interface FilterOptions {
@@ -220,4 +223,22 @@ export interface Product {
   description: string;
   features: string[];
   inStock: boolean;
+}
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  group: 'Today' | 'Yesterday' | 'Earlier';
+  timestamp: string;
+  unread: boolean;
+  type: 'booking' | 'offer' | 'points' | 'system';
+}
+
+export interface PointsTransaction {
+  id: string;
+  title: string;
+  date: string;
+  points: number; // positive = earned, negative = spent
+  type: 'booking_reward' | 'redemption' | 'referral' | 'signup_bonus';
 }

@@ -4,6 +4,7 @@ import { Button } from '../../../components/Button';
 import { Booking } from '../../../types';
 import { bookingService } from '../services/bookingService';
 import { formatMoney } from '../../../utils/money';
+import { useSessionStore } from '../../../store/useSessionStore';
 import { AlertCircle, AlertTriangle } from 'lucide-react';
 
 interface CancelBookingSheetProps {
@@ -29,16 +30,27 @@ export const CancelBookingSheet: React.FC<CancelBookingSheetProps> = ({
 }) => {
   const [selectedReason, setSelectedReason] = useState(CANCELLATION_REASONS[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useSessionStore();
 
   const { refundPercent, refundAmountPaise, hoursRemaining } =
     bookingService.calculateRefund(booking);
 
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     setIsSubmitting(true);
-    const updated = bookingService.cancelBooking(booking.id, selectedReason);
+    const res = await bookingService.cancelBooking(booking.id, selectedReason, user?.id);
     setIsSubmitting(false);
-    if (updated) {
-      onCancelled(updated);
+    if (res.success) {
+      const updatedBooking: Booking = {
+        ...booking,
+        status: 'cancelled',
+        cancellation: {
+          reason: selectedReason,
+          refundAmountPaise: res.refundAmountPaise,
+          refundPercent: res.refundPercent,
+          cancelledAt: new Date().toISOString(),
+        },
+      };
+      onCancelled(updatedBooking);
       onClose();
     }
   };

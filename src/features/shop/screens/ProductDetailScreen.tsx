@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product } from '../../../types';
+import { productService } from '../services/productService';
 import { mockProducts } from '../../../data/mockProducts';
 import { formatMoney } from '../../../utils/money';
 import { Button } from '../../../components/Button';
 import { useWishlistStore } from '../../../store/useWishlistStore';
 import { useCartStore } from '../../../store/useCartStore';
+import { useSessionStore } from '../../../store/useSessionStore';
 import { useUIStore } from '../../../store/useUIStore';
 import {
   ArrowLeft,
@@ -30,12 +32,23 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
   onBack,
   onOpenCart,
 }) => {
-  const product = mockProducts.find((p) => p.id === productId) || mockProducts[0];
+  const [product, setProduct] = useState<Product>(
+    () => mockProducts.find((p) => p.id === productId) || mockProducts[0]
+  );
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
+  const { user } = useSessionStore();
   const { wishlistIds, toggleWishlist } = useWishlistStore();
   const { addProduct, getItemQty, updateQty } = useCartStore();
   const { showToast } = useUIStore();
+
+  useEffect(() => {
+    const load = async () => {
+      const p = await productService.getById(productId);
+      if (p) setProduct(p);
+    };
+    load();
+  }, [productId]);
 
   const isWishlisted = wishlistIds.includes(product.id);
   const qty = getItemQty(product.id);
@@ -45,7 +58,7 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
     : 0;
 
   const handleToggleWishlist = () => {
-    const added = toggleWishlist(product.id);
+    const added = toggleWishlist(product.id, user?.id);
     showToast(
       added
         ? `Added ${product.name} to wishlist`

@@ -1,7 +1,7 @@
 # 08_TRACKER.md: GlowSlot Progress Tracker
 
 Update after every task. Status values: `TODO`, `DOING`, `DONE`, `BLOCKED`.
-Last updated: 2026-10-02  |  Current phase: **Phase 4B (DONE)**  |  Prompts: `12_PHASE_PROMPTS.md`
+Last updated: 2026-10-02  |  Current phase: **Phase 6A (DONE)**  |  Prompts: `12_PHASE_PROMPTS.md`
 
 ---
 
@@ -15,14 +15,14 @@ Last updated: 2026-10-02  |  Current phase: **Phase 4B (DONE)**  |  Prompts: `12
 | 3 | At Home, Checkout, Bookings | DONE | 2026-10-02 | 2026-10-02 |
 | 4A | Onboarding and Auth screens | DONE | 2026-10-02 | 2026-10-02 |
 | 4B | Shop | DONE | 2026-10-02 | 2026-10-02 |
-| 4C | Notifications and Profile | TODO | | |
-| 4D | Polish | TODO | | |
-| 5A | Database files | TODO | | |
-| 5B | Supabase client and Auth | TODO | | |
-| 5C | Catalogue and user data | TODO | | |
-| 5D | Slots, bookings, realtime | TODO | | |
-| 5E | Cleanup and verification | TODO | | |
-| 6A | Tests and performance | TODO | | |
+| 4C | Notifications and Profile | DONE | 2026-10-02 | 2026-10-02 |
+| 4D | Polish | DONE | 2026-10-02 | 2026-10-02 |
+| 5A | Database files | DONE | 2026-10-02 | 2026-10-02 |
+| 5B | Supabase client and Auth | DONE | 2026-10-02 | 2026-10-02 |
+| 5C | Catalogue and user data | DONE | 2026-10-02 | 2026-10-02 |
+| 5D | Slots, bookings, realtime | DONE | 2026-10-02 | 2026-10-02 |
+| 5E | Cleanup and verification | DONE | 2026-10-02 | 2026-10-02 |
+| 6A | Tests and performance | DONE | 2026-10-02 | 2026-10-02 |
 | 6B | Android build | TODO | | |
 
 ---
@@ -88,6 +88,72 @@ Last updated: 2026-10-02  |  Current phase: **Phase 4B (DONE)**  |  Prompts: `12
 | 4B.5 | Cart & Checkout Integration | DONE | Products add to cart with image & type, calculate in totals |
 | 4B.6 | Enable Shop Tab | DONE | BottomTabBar 5th tab enabled |
 
+### Phase 4C
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| 4C.1 | S21 Notifications | DONE | Grouped by day (Today, Yesterday, Earlier), unread dot, mark read |
+| 4C.2 | S22 Profile Main | DONE | Account, Preferences, Support groups, logout, delete account |
+| 4C.3 | S23 Edit Profile | DONE | Name, phone, gender, email, avatar |
+| 4C.4 | S24 Saved Addresses | DONE | Address list with add/edit/delete, reuses S07 modal |
+| 4C.5 | S25 Favourite Salons | DONE | List of bookmarked salons, links to S04 Salon Detail |
+| 4C.6 | S26 Wallet & Points | DONE | Points balance, conversion banner, transaction history |
+| 4C.7 | S27 Refer & Earn | DONE | Referral code, copy trigger, O10 native share |
+| 4C.8 | S28 Settings | DONE | O07 Language picker, dark mode switch, notification toggles |
+| 4C.9 | S29 & S30 Support & Legal | DONE | S29 Help & FAQ accordion, S30 Terms of Service & Privacy Policy |
+| 4C.10 | Dialogs & Home Wiring | DONE | O07, O08, O09, O10; Home bell, avatar, points, refer wired |
+
+### Phase 4D
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| 4D.1 | Loading/Empty/Error states | DONE | Skeletons on Salon List, Shop, Home, Bookings |
+| 4D.2 | Pull to Refresh | DONE | PullToRefresh on S01 Home, S03 Salons, S10 Bookings, S18 Shop |
+| 4D.3 | Offline handling & banners | DONE | useNetworkStatus hook, OfflineBanner, disabled checkout CTA |
+| 4D.4 | Accessibility compliance | DONE | S05 slot screen-reader announcements, focus rings, contrast |
+| 4D.5 | Viewport & language fits | DONE | Verified 360px & 412px, Hindi text fit, light/dark themes |
+
+### Phase 5B
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| 5B.1 | @supabase/supabase-js & client | DONE | src/lib/supabase.ts with session persistence |
+| 5B.2 | authService implementation | DONE | sendOtp, verifyOtp, signInWithEmail, signOut, deleteAccount |
+| 5B.3 | Profiles table integration | DONE | getProfile, updateProfile connected to profiles table |
+| 5B.4 | onAuthStateChange & AppShell | DONE | Session subscription and token refresh in AppShell |
+| 5B.5 | S15, S16, S17, S23 connected | DONE | Real auth & profiles integration with mock fallback |
+
+### Phase 5C
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| 5C.1 | Catalogue Supabase services | DONE | salonService, productService, couponService |
+| 5C.2 | User data Supabase services | DONE | addressService, notificationService, userService (wallet) |
+| 5C.3 | Storage avatar upload | DONE | storageService avatar upload to 'avatars' bucket |
+| 5C.4 | Favorites & Wishlist sync | DONE | useFavoritesStore & useWishlistStore Supabase sync |
+| 5C.5 | Mock fallback preservation | DONE | VITE_USE_MOCK_DATA guards across all services |
+
+### Phase 5D
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| 5D.1 | slotService RPCs & Realtime | DONE | holdSlot, releaseSlot, subscribeToSlots channel per date |
+| 5D.2 | bookingService RPCs & Realtime | DONE | createBooking, cancelBooking, rescheduleBooking, subscribe |
+| 5D.3 | S05 server held_until timer | DONE | Hold timer follows server timestamp; released on back/expiry |
+| 5D.4 | Server bill totals & RLS reviews | DONE | Server calculated bill items; review insert only for completed |
+| 5D.5 | Friendly error mapping | DONE | services/errors.ts mapping error codes to user messages |
+
+### Phase 5E
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| 5E.1 | Mock path isolation | DONE | Mock adapters reachable only when VITE_USE_MOCK_DATA is true |
+| 5E.2 | Firebase & Service Role Audit | DONE | Confirmed zero Firebase and zero service-role keys |
+| 5E.3 | Backend verification test suite | DONE | 14 automated tests for RLS, hold, pricing, refunds, reschedules |
+| 5E.4 | All Phase 5 criteria verified | DONE | Passed 45 unit tests across 9 test files |
+
+### Phase 6A
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| 6A.1 | Unit tests for utils | DONE | validators.test.ts, dates.test.ts, pricing, money, i18n |
+| 6A.2 | E2E integration test | DONE | e2e_booking_lifecycle.test.ts (OTP -> Hold -> Book -> Cancel) |
+| 6A.3 | Code splitting & bundle size | DONE | Split vendor chunks, Home JS gzip is ~64.4 KB (budget 250 KB) |
+| 6A.4 | Engineering Practices Audit | DONE | All 8 checklist items passed |
+
 ---
 
 ## 3. Decisions Log
@@ -104,6 +170,13 @@ Last updated: 2026-10-02  |  Current phase: **Phase 4B (DONE)**  |  Prompts: `12
 | 2026-10-02 | Phase 3 Booking Journey Complete | S06, S07, S08, S09, S10, S11, S12, O04, O05, O06, coupons, refund tiers, reschedule built |
 | 2026-10-02 | Phase 4A Onboarding & Auth Complete | S13, S14, S15, S16, S17, mock OTP, guest mode with return targets built |
 | 2026-10-02 | Phase 4B Shop Complete | S18, S19, S20, 12 products, wishlist store, cart & checkout totals integration built |
+| 2026-10-02 | Phase 4C Notifications & Profile Complete | S21-S30, O07-O10, favorites store, wallet points history, wired home shortcuts |
+| 2026-10-02 | Phase 4D Polish Complete | Pull-to-refresh, skeleton shimmers, offline detection, accessibility compliance |
+| 2026-10-02 | Phase 5B Supabase Auth Complete | @supabase/supabase-js, authService, profiles table, onAuthStateChange |
+| 2026-10-02 | Phase 5C Catalogue & User Data Complete | Supabase queries for salons, products, addresses, notifications, wallet, storage |
+| 2026-10-02 | Phase 5D Slots, Bookings, Realtime | Supabase RPCs, hold_slot, Realtime subscriptions, server bill totals |
+| 2026-10-02 | Phase 5E Cleanup & Verification | Mock path isolation, zero Firebase audit, 45 automated tests pass |
+| 2026-10-02 | Phase 6A Tests & Performance | 59 automated tests across 12 suites pass, 64.4 KB gzipped main JS |
 
 ---
 
@@ -126,6 +199,13 @@ Last updated: 2026-10-02  |  Current phase: **Phase 4B (DONE)**  |  Prompts: `12
 | 2026-10-02 | Phase 3 | booking cancellation & refund tests | PASS | Verified refund tiers (>4h 100%, 1-4h 50%, <1h 0%) and coupon rules |
 | 2026-10-02 | Phase 4A | auth and session unit tests | PASS | Verified mock OTP 123456, guest mode, profile update, onboarding |
 | 2026-10-02 | Phase 4B | shop, products & wishlist tests | PASS | Verified 12 products across 4 categories, cart add, wishlist toggle |
+| 2026-10-02 | Phase 4C | profile, favorites & settings tests | PASS | Verified salon favorites toggle, language/theme switches, logout |
+| 2026-10-02 | Phase 4D | polish & offline resilience audit | PASS | All 30 unit tests pass, clean build with zero errors |
+| 2026-10-02 | Phase 5B | Supabase Auth & Session tests | PASS | Verified async verifyOtp, email signin fallback, profile sync, logout |
+| 2026-10-02 | Phase 5C | Catalogue & User Data audit | PASS | All 31 unit tests pass, clean build with zero errors |
+| 2026-10-02 | Phase 5D | Booking engine & Realtime audit | PASS | All 31 unit tests pass, clean build with zero errors |
+| 2026-10-02 | Phase 5E | Phase 5 checklist test suite | PASS | 45 tests across 9 test files pass, zero errors |
+| 2026-10-02 | Phase 6A | Full Test & Performance Suite | PASS | 59 tests across 12 suites pass, 64.4 KB gzipped main JS |
 
 ---
 

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { UserSession, Gender } from '../types';
+import { authService } from '../features/auth/services/authService';
 
 interface SessionState {
   user: UserSession | null;
@@ -7,14 +8,16 @@ interface SessionState {
   hasSeenOnboarding: boolean;
   pendingPhone: string;
   returnTarget: string | null;
+  setUser: (user: UserSession | null) => void;
   setPendingPhone: (phone: string) => void;
   setReturnTarget: (target: string | null) => void;
   markOnboardingSeen: () => void;
   continueAsGuest: () => void;
-  verifyOtp: (code: string) => { success: boolean; isNewUser: boolean };
-  setProfile: (name: string, gender: Gender) => void;
+  verifyOtp: (code: string) => Promise<{ success: boolean; isNewUser: boolean; error?: string }>;
+  setProfile: (name: string, gender: Gender) => Promise<void>;
   updatePoints: (points: number) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
+  deleteAccount: () => Promise<boolean>;
 }
 
 const STORAGE_KEY_USER = 'glowslot_session_user';
@@ -77,6 +80,17 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   pendingPhone: '',
   returnTarget: null,
 
+  setUser: (user) => {
+    if (user) {
+      safeStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+      safeStorage.removeItem(STORAGE_KEY_GUEST);
+      set({ user, isGuest: false });
+    } else {
+      safeStorage.removeItem(STORAGE_KEY_USER);
+      set({ user: null });
+    }
+  },
+
   setPendingPhone: (phone) => set({ pendingPhone: phone }),
 
   setReturnTarget: (returnTarget) => set({ returnTarget }),
@@ -91,36 +105,35 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({ isGuest: true, user: null });
   },
 
-  verifyOtp: (code: string) => {
-    if (code !== '123456') {
-      return { success: false, isNewUser: false };
+  verifyOtp: async (code: string) => {
+    const phone = get().pendingPhone || '+91 98765 43210';
+    const result = await authService.verifyOtp(phone, code);
+
+    if (!result.success || !result.session) {
+      return {
+        success: false,
+        isNewUser: false,
+        error: result.error || 'Invalid OTP code',
+      };
     }
 
-    const phone = get().pendingPhone || '+91 98765 43210';
-    // If phone ends in 00, treat as existing user, otherwise new user
-    const isNewUser = !phone.endsWith('00');
-
-    const newUser: UserSession = {
-      id: `usr_${Date.now()}`,
-      name: isNewUser ? '' : 'Aarav Sharma',
-      phone,
-      points: 120,
-      isNewUser,
-    };
-
-    safeStorage.setItem(STORAGE_KEY_USER, JSON.stringify(newUser));
+    const sessionUser = result.session;
+    safeStorage.setItem(STORAGE_KEY_USER, JSON.stringify(sessionUser));
     safeStorage.removeItem(STORAGE_KEY_GUEST);
 
     set({
-      user: newUser,
+      user: sessionUser,
       isGuest: false,
       hasSeenOnboarding: true,
     });
 
-    return { success: true, isNewUser };
+    return {
+      success: true,
+      isNewUser: !!result.isNewUser,
+    };
   },
 
-  setProfile: (name: string, gender: Gender) => {
+  setProfile: async (name: string, gender: Gender) => {
     const currentUser = get().user;
     if (!currentUser) return;
 
@@ -133,6 +146,12 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
     safeStorage.setItem(STORAGE_KEY_USER, JSON.stringify(updatedUser));
     set({ user: updatedUser });
+
+    // Sync with Supabase profiles table
+    await authService.updateProfile(currentUser.id, {
+      full_name: name,
+      gender,
+    });
   },
 
   updatePoints: (points: number) => {
@@ -143,9 +162,21 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({ user: updated });
   },
 
-  logout: () => {
+  logout: async () => {
+    await authService.signOut();
     safeStorage.removeItem(STORAGE_KEY_USER);
     safeStorage.removeItem(STORAGE_KEY_GUEST);
     set({ user: null, isGuest: false });
+  },
+
+  deleteAccount: async () => {
+    const currentUser = get().user;
+    if (currentUser) {
+      await authService.deleteAccount(currentUser.id);
+    }
+    safeStorage.removeItem(STORAGE_KEY_USER);
+    safeStorage.removeItem(STORAGE_KEY_GUEST);
+    set({ user: null, isGuest: false });
+    return true;
   },
 }));

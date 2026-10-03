@@ -12,6 +12,7 @@ import { OfferDetailsSheet } from '../components/OfferDetailsSheet';
 import { AddressPickerSheet } from '../../athome/components/AddressPickerSheet';
 import { Button } from '../../../components/Button';
 import { Coupon, PaymentMethod, UserAddress } from '../../../types';
+import { useNetworkStatus } from '../../../hooks/useNetworkStatus';
 import {
   ArrowLeft,
   Tag,
@@ -125,7 +126,14 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
     handleApplyCoupon(found);
   };
 
+  const isOnline = useNetworkStatus();
+
   const handlePaymentSubmit = async () => {
+    if (!isOnline) {
+      showToast('You are currently offline. Please reconnect to proceed with booking.');
+      return;
+    }
+
     if (items.length === 0) {
       showToast('Cart is empty.');
       return;
@@ -159,9 +167,11 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
         updatePoints(Math.max(0, user.points - pointsUsed));
       }
 
-      // Create Booking in localStorage
-      const newBooking = bookingService.createBooking({
-        type: primarySlot?.salonName.includes('At-Home') ? 'athome' : 'salon',
+      // Create Booking on server / mock
+      const bookingRes = await bookingService.createBooking({
+        userId: user?.id || 'guest',
+        slotId: primarySlot?.slotId || 'slot-1',
+        salonId: primarySlot?.salonId || 'sal-1',
         salonName: primarySlot?.salonName || 'Luxe Cut & Style Studio',
         salonAddress: '42, 1st Cross, Koramangala 5th Block, Bengaluru',
         userAddress: selectedAddress || undefined,
@@ -182,13 +192,18 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
         pointsDiscountPaise: pointsDeductionPaise,
         totalPaise: finalTotalPaise,
         paymentMethod,
-        paymentStatus: paymentMethod === 'pay_at_salon' ? 'pay_later' : 'paid',
       });
+
+      if (!bookingRes.success || !bookingRes.booking) {
+        showToast(bookingRes.error || 'Failed to confirm booking.');
+        setIsProcessing(false);
+        return;
+      }
 
       // Clear cart
       clearCart();
       setIsProcessing(false);
-      onSuccess(newBooking.id);
+      onSuccess(bookingRes.booking.id);
     } catch {
       showToast('An unexpected payment error occurred.');
       setIsProcessing(false);
@@ -465,10 +480,14 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
           variant="primary"
           size="lg"
           className="flex-1 max-w-xs"
-          disabled={isProcessing}
+          disabled={isProcessing || !isOnline}
           onClick={handlePaymentSubmit}
         >
-          {isProcessing ? 'Processing...' : `Pay ${formatMoney(finalTotalPaise)}`}
+          {!isOnline
+            ? 'Offline (Reconnect to Pay)'
+            : isProcessing
+            ? 'Processing...'
+            : `Pay ${formatMoney(finalTotalPaise)}`}
         </Button>
       </div>
 

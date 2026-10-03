@@ -26,14 +26,18 @@ export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({
     showToast('Location permission enabled!');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Please enter your full name.');
       return;
     }
 
-    setProfile(name.trim(), gender);
+    setIsLoading(true);
+    await setProfile(name.trim(), gender);
+    setIsLoading(false);
     showToast(`Welcome to GlowSlot, ${name.trim()}!`);
     onComplete();
   };

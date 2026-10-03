@@ -17,6 +17,16 @@ import { AtHomeScreen } from '../features/athome/screens/AtHomeScreen';
 import { ShopListScreen } from '../features/shop/screens/ShopListScreen';
 import { ProductDetailScreen } from '../features/shop/screens/ProductDetailScreen';
 import { WishlistScreen } from '../features/shop/screens/WishlistScreen';
+import { NotificationsScreen } from '../features/notifications/screens/NotificationsScreen';
+import { ProfileMainScreen } from '../features/profile/screens/ProfileMainScreen';
+import { EditProfileScreen } from '../features/profile/screens/EditProfileScreen';
+import { SavedAddressesScreen } from '../features/profile/screens/SavedAddressesScreen';
+import { FavouriteSalonsScreen } from '../features/profile/screens/FavouriteSalonsScreen';
+import { WalletPointsScreen } from '../features/profile/screens/WalletPointsScreen';
+import { ReferEarnScreen } from '../features/profile/screens/ReferEarnScreen';
+import { SettingsScreen } from '../features/profile/screens/SettingsScreen';
+import { HelpSupportScreen } from '../features/profile/screens/HelpSupportScreen';
+import { TermsPrivacyScreen } from '../features/profile/screens/TermsPrivacyScreen';
 import { BottomTabBar } from '../components/BottomTabBar';
 import { LocationSheet } from '../features/home/components/LocationSheet';
 import { OfflineBanner } from '../components/OfflineBanner';
@@ -28,6 +38,7 @@ import { useSessionStore } from '../store/useSessionStore';
 import { Salon, SlotItem, Booking } from '../types';
 import { mockSalons } from '../data/mockData';
 import { bookingService } from '../features/bookings/services/bookingService';
+import { authService } from '../features/auth/services/authService';
 
 type ViewMode =
   | 'splash'
@@ -43,7 +54,17 @@ type ViewMode =
   | 'bookingSuccess'
   | 'bookingDetail'
   | 'productDetail'
-  | 'wishlist';
+  | 'wishlist'
+  | 'notifications'
+  | 'profile'
+  | 'editProfile'
+  | 'savedAddresses'
+  | 'favouriteSalons'
+  | 'walletPoints'
+  | 'referEarn'
+  | 'settings'
+  | 'helpSupport'
+  | 'termsPrivacy';
 
 export const AppShell: React.FC = () => {
   const {
@@ -56,9 +77,8 @@ export const AppShell: React.FC = () => {
   } = useUIStore();
 
   const { addItemWithSlot, addItem } = useCartStore();
-  const { user, returnTarget, setReturnTarget } = useSessionStore();
+  const { user, returnTarget, setReturnTarget, setUser } = useSessionStore();
 
-  // Launch routing starts at splash
   const [currentView, setCurrentView] = useState<ViewMode>('splash');
   const [selectedSalonId, setSelectedSalonId] = useState<string | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -70,7 +90,18 @@ export const AppShell: React.FC = () => {
     service: { id: string; name: string; durationMin: number; basePrice: number };
   } | null>(null);
 
-  // Initialize theme class on html element
+  useEffect(() => {
+    const sub = authService.onAuthStateChange((sessionUser) => {
+      if (sessionUser) {
+        setUser(sessionUser);
+      }
+    });
+
+    return () => {
+      sub.unsubscribe();
+    };
+  }, [setUser]);
+
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -81,10 +112,9 @@ export const AppShell: React.FC = () => {
     }
   }, [theme]);
 
-  // Auth interceptor helper for guest mode
   const requireAuth = (targetView: ViewMode): boolean => {
     if (!user) {
-      showToast('Please sign in to proceed with booking.');
+      showToast('Please sign in to proceed.');
       setReturnTarget(targetView);
       setCurrentView('login');
       return false;
@@ -148,22 +178,24 @@ export const AppShell: React.FC = () => {
     setCurrentView('slotPicker');
   };
 
-  const handleSlotContinue = (
+  const handleSlotContinue = async (
     slot: SlotItem,
     salon: Salon,
     service: { id: string; name: string; durationMin: number; basePrice: number }
   ) => {
     if (reschedulingBooking) {
-      const updated = bookingService.rescheduleBooking(
+      const res = await bookingService.rescheduleBooking(
         reschedulingBooking.id,
-        slot.date,
-        slot.time
+        { id: slot.id, date: slot.date, time: slot.time },
+        user?.id
       );
-      if (updated) {
+      if (res.success) {
         showToast(`Appointment rescheduled to ${slot.date} at ${slot.time}!`);
-        setSelectedBookingId(updated.id);
+        setSelectedBookingId(reschedulingBooking.id);
         setReschedulingBooking(null);
         setCurrentView('bookingDetail');
+      } else {
+        showToast(res.error || 'Failed to reschedule.');
       }
       return;
     }
@@ -235,7 +267,7 @@ export const AppShell: React.FC = () => {
         {/* Offline Banner */}
         <OfflineBanner />
 
-        {/* S13 Splash Screen */}
+        {/* Auth / Onboarding Views */}
         {currentView === 'splash' && (
           <SplashScreen
             onFinish={(destination) => {
@@ -246,12 +278,10 @@ export const AppShell: React.FC = () => {
           />
         )}
 
-        {/* S14 Onboarding Screen */}
         {currentView === 'onboarding' && (
           <OnboardingScreen onComplete={() => setCurrentView('login')} />
         )}
 
-        {/* S15 Login Screen */}
         {currentView === 'login' && (
           <LoginScreen
             onOtpSent={() => setCurrentView('otpVerify')}
@@ -259,7 +289,6 @@ export const AppShell: React.FC = () => {
           />
         )}
 
-        {/* S16 OTP Verify Screen */}
         {currentView === 'otpVerify' && (
           <OtpVerifyScreen
             onBack={() => setCurrentView('login')}
@@ -273,12 +302,11 @@ export const AppShell: React.FC = () => {
           />
         )}
 
-        {/* S17 Profile Setup Screen */}
         {currentView === 'profileSetup' && (
           <ProfileSetupScreen onComplete={handlePostAuthNavigate} />
         )}
 
-        {/* S02 Cart Screen */}
+        {/* Cart & Checkout */}
         {currentView === 'cart' && (
           <CartScreen
             onBack={() => setCurrentView('tabs')}
@@ -286,7 +314,6 @@ export const AppShell: React.FC = () => {
           />
         )}
 
-        {/* S08 Checkout Screen */}
         {currentView === 'checkout' && (
           <CheckoutScreen
             onBack={() => setCurrentView('cart')}
@@ -294,7 +321,6 @@ export const AppShell: React.FC = () => {
           />
         )}
 
-        {/* S09 Booking Success Screen */}
         {currentView === 'bookingSuccess' && selectedBookingId && (
           <BookingSuccessScreen
             bookingId={selectedBookingId}
@@ -309,7 +335,6 @@ export const AppShell: React.FC = () => {
           />
         )}
 
-        {/* S11 Booking Detail Screen */}
         {currentView === 'bookingDetail' && selectedBookingId && (
           <BookingDetailScreen
             bookingId={selectedBookingId}
@@ -319,7 +344,7 @@ export const AppShell: React.FC = () => {
           />
         )}
 
-        {/* S04 Salon Detail Screen */}
+        {/* Salon Detail & Slot Picker */}
         {currentView === 'salonDetail' && selectedSalonId && (
           <SalonDetailScreen
             salonId={selectedSalonId}
@@ -328,7 +353,6 @@ export const AppShell: React.FC = () => {
           />
         )}
 
-        {/* S05 Smart Slot Picker Screen */}
         {currentView === 'slotPicker' && slotPickerContext && (
           <SlotPickerScreen
             salon={slotPickerContext.salon}
@@ -345,7 +369,7 @@ export const AppShell: React.FC = () => {
           />
         )}
 
-        {/* S19 Product Detail Screen */}
+        {/* Shop & Wishlist */}
         {currentView === 'productDetail' && selectedProductId && (
           <ProductDetailScreen
             productId={selectedProductId}
@@ -354,7 +378,6 @@ export const AppShell: React.FC = () => {
           />
         )}
 
-        {/* S20 Wishlist Screen */}
         {currentView === 'wishlist' && (
           <WishlistScreen
             onBack={() => setCurrentView('tabs')}
@@ -366,6 +389,68 @@ export const AppShell: React.FC = () => {
           />
         )}
 
+        {/* Notifications & Profile Ecosystem (S21 to S30) */}
+        {currentView === 'notifications' && (
+          <NotificationsScreen onBack={() => setCurrentView('tabs')} />
+        )}
+
+        {currentView === 'profile' && (
+          <ProfileMainScreen
+            onBack={() => setCurrentView('tabs')}
+            onEditProfile={() => setCurrentView('editProfile')}
+            onSavedAddresses={() => setCurrentView('savedAddresses')}
+            onFavouriteSalons={() => setCurrentView('favouriteSalons')}
+            onWalletPoints={() => setCurrentView('walletPoints')}
+            onReferEarn={() => setCurrentView('referEarn')}
+            onSettings={() => setCurrentView('settings')}
+            onHelpSupport={() => setCurrentView('helpSupport')}
+            onTermsPrivacy={() => setCurrentView('termsPrivacy')}
+            onLoggedOut={() => setCurrentView('login')}
+          />
+        )}
+
+        {currentView === 'editProfile' && (
+          <EditProfileScreen onBack={() => setCurrentView('profile')} />
+        )}
+
+        {currentView === 'savedAddresses' && (
+          <SavedAddressesScreen onBack={() => setCurrentView('profile')} />
+        )}
+
+        {currentView === 'favouriteSalons' && (
+          <FavouriteSalonsScreen
+            onBack={() => setCurrentView('profile')}
+            onSelectSalon={handleOpenSalon}
+            onExploreSalons={() => {
+              setActiveTab('salons');
+              setCurrentView('tabs');
+            }}
+          />
+        )}
+
+        {currentView === 'walletPoints' && (
+          <WalletPointsScreen
+            onBack={() => setCurrentView('tabs')}
+            onReferClick={() => setCurrentView('referEarn')}
+          />
+        )}
+
+        {currentView === 'referEarn' && (
+          <ReferEarnScreen onBack={() => setCurrentView('tabs')} />
+        )}
+
+        {currentView === 'settings' && (
+          <SettingsScreen onBack={() => setCurrentView('profile')} />
+        )}
+
+        {currentView === 'helpSupport' && (
+          <HelpSupportScreen onBack={() => setCurrentView('profile')} />
+        )}
+
+        {currentView === 'termsPrivacy' && (
+          <TermsPrivacyScreen onBack={() => setCurrentView('profile')} />
+        )}
+
         {/* Main Tabbed Views */}
         {currentView === 'tabs' && (
           <div className="flex-1 flex flex-col">
@@ -375,6 +460,10 @@ export const AppShell: React.FC = () => {
                   onOpenLocation={() => setIsLocationSheetOpen(true)}
                   onOpenCart={() => setCurrentView('cart')}
                   onSelectSalon={handleOpenSalon}
+                  onOpenNotifications={() => setCurrentView('notifications')}
+                  onOpenProfile={() => setCurrentView('profile')}
+                  onOpenPoints={() => setCurrentView('walletPoints')}
+                  onOpenRefer={() => setCurrentView('referEarn')}
                 />
               )}
 

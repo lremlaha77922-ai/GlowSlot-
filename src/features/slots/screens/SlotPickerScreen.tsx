@@ -6,6 +6,7 @@ import { DatePickerSheet } from '../components/DatePickerSheet';
 import { formatMoney } from '../../../utils/money';
 import { Button } from '../../../components/Button';
 import { Skeleton } from '../../../components/Skeleton';
+import { useSessionStore } from '../../../store/useSessionStore';
 import {
   ArrowLeft,
   Calendar,
@@ -42,32 +43,40 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState<SlotItem | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const { user } = useSessionStore();
 
-  // 5-minute hold timer state (300 seconds) per Design.md 8.6 & 04_TECHSPEC.md
+  // 5-minute hold timer state follows held_until from server
   const [holdSecondsRemaining, setHoldSecondsRemaining] = useState<number | null>(null);
 
   const { showToast } = useUIStore();
 
-  // Fetch slots on date change
+  const fetchSlots = async () => {
+    setIsLoading(true);
+    const items = await slotService.listByDay(
+      salon.id,
+      service.id,
+      selectedDate,
+      service.basePrice,
+      user?.id
+    );
+    setSlots(items);
+    setIsLoading(false);
+  };
+
+  // Fetch slots on date change & subscribe to Realtime channel
   useEffect(() => {
-    const fetchSlots = async () => {
-      setIsLoading(true);
-      // Reset selection and timer when date changes
-      setSelectedSlot(null);
-      setHoldSecondsRemaining(null);
-
-      const items = await slotService.listByDay(
-        salon.id,
-        service.id,
-        selectedDate,
-        service.basePrice
-      );
-      setSlots(items);
-      setIsLoading(false);
-    };
-
+    setSelectedSlot(null);
+    setHoldSecondsRemaining(null);
     fetchSlots();
-  }, [salon.id, service.id, selectedDate, service.basePrice]);
+
+    const sub = slotService.subscribeToSlots(salon.id, selectedDate, () => {
+      fetchSlots();
+    });
+
+    return () => {
+      sub.unsubscribe();
+    };
+  }, [salon.id, service.id, selectedDate, service.basePrice, user?.id]);
 
   // Hold Countdown effect
   useEffect(() => {
@@ -76,8 +85,12 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
     if (holdSecondsRemaining <= 0) {
       // Hold expired per 03_APPFLOW.md & 09_Phases.md
       showToast('Hold expired, please choose your slot again.');
+      if (selectedSlot) {
+        slotService.release(selectedSlot.id, user?.id);
+      }
       setSelectedSlot(null);
       setHoldSecondsRemaining(null);
+      fetchSlots();
       return;
     }
 
@@ -86,21 +99,35 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [holdSecondsRemaining, showToast]);
+  }, [holdSecondsRemaining, selectedSlot, user?.id, showToast]);
+
+  const handleBack = () => {
+    if (selectedSlot) {
+      slotService.release(selectedSlot.id, user?.id);
+    }
+    onBack();
+  };
 
   const handleSelectSlot = async (slot: SlotItem) => {
     if (slot.status === 'booked' || slot.status === 'held_by_others') {
       return;
     }
 
-    try {
-      await slotService.hold(slot.id);
-      setSelectedSlot(slot);
-      setHoldSecondsRemaining(5 * 60); // 5 minutes hold
-      showToast(`Slot ${slot.time} reserved for 5 minutes.`);
-    } catch {
-      showToast('Slot no longer available.');
+    const res = await slotService.hold(slot.id, user?.id);
+    if (!res.success) {
+      showToast(res.error || 'Slot no longer available.');
+      fetchSlots();
+      return;
     }
+
+    setSelectedSlot(slot);
+    if (res.heldUntil) {
+      const diffSecs = Math.max(1, Math.floor((new Date(res.heldUntil).getTime() - Date.now()) / 1000));
+      setHoldSecondsRemaining(diffSecs);
+    } else {
+      setHoldSecondsRemaining(5 * 60);
+    }
+    showToast(`Slot ${slot.time} reserved for 5 minutes.`);
   };
 
   const formatCountdown = (seconds: number) => {
@@ -114,7 +141,7 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
       {/* Top App Bar */}
       <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-border/80 px-4 h-14 flex items-center justify-between">
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="p-1.5 -ml-1.5 rounded-full text-text hover:bg-primary-soft transition-colors cursor-pointer"
           aria-label="Go back"
         >

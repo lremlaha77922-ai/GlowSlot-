@@ -5,6 +5,7 @@ import { Booking } from '../../../types';
 import { bookingService } from '../services/bookingService';
 import { Star } from 'lucide-react';
 import { useUIStore } from '../../../store/useUIStore';
+import { useSessionStore } from '../../../store/useSessionStore';
 
 interface WriteReviewModalProps {
   isOpen: boolean;
@@ -32,6 +33,8 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
   const [rating, setRating] = useState(5);
   const [selectedTags, setSelectedTags] = useState<string[]>(['Punctual Stylist', 'Clean & Sanitized']);
   const [comment, setComment] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useSessionStore();
   const { showToast } = useUIStore();
 
   const toggleTag = (tag: string) => {
@@ -40,24 +43,33 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) {
       showToast('Please add a few words to your review.');
       return;
     }
 
-    const updated = bookingService.addReview(booking.id, {
+    const reviewObj = {
       rating,
       tags: selectedTags,
       text: comment.trim(),
       submittedAt: new Date().toISOString(),
-    });
+    };
 
-    if (updated) {
+    setIsLoading(true);
+    const res = await bookingService.addReview(booking.id, reviewObj, user?.id);
+    setIsLoading(false);
+
+    if (res.success) {
       showToast('Thank you! Your review has been submitted.');
-      onReviewSubmitted(updated);
+      onReviewSubmitted({
+        ...booking,
+        review: reviewObj,
+      });
       onClose();
+    } else {
+      showToast(res.error || 'Failed to submit review.');
     }
   };
 
@@ -80,19 +92,23 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
               >
                 <Star
                   size={28}
-                  className={s <= rating ? 'fill-deal text-deal' : 'text-border'}
+                  className={
+                    s <= rating
+                      ? 'text-deal fill-deal transition-colors'
+                      : 'text-border'
+                  }
                 />
               </button>
             ))}
           </div>
         </div>
 
-        {/* Tags */}
+        {/* Tags Selector */}
         <div>
           <label className="text-xs font-bold text-text uppercase tracking-wider block mb-2">
             What went well?
           </label>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {REVIEW_TAGS.map((tag) => {
               const isSelected = selectedTags.includes(tag);
               return (
@@ -100,10 +116,10 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
                   type="button"
                   key={tag}
                   onClick={() => toggleTag(tag)}
-                  className={`text-xs px-2.5 py-1 rounded-chip border transition-all cursor-pointer ${
+                  className={`text-xs px-3 py-1.5 rounded-chip font-medium border transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-primary text-white border-primary font-semibold'
-                      : 'bg-surface text-muted border-border hover:bg-primary-soft/40'
+                      ? 'bg-primary text-white border-primary shadow-level-1'
+                      : 'bg-surface text-muted border-border hover:border-primary/40'
                   }`}
                 >
                   {tag}
@@ -113,23 +129,23 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
           </div>
         </div>
 
-        {/* Feedback text */}
+        {/* Comment textarea */}
         <div>
           <label className="text-xs font-bold text-text uppercase tracking-wider block mb-1.5">
-            Detailed Feedback
+            Your Detailed Feedback
           </label>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Tell us about the stylist haircut quality, service timing..."
+            placeholder="Tell us about the hygiene, stylist skill, and zero-wait experience..."
             rows={3}
-            className="w-full p-3 rounded-input border border-border bg-bg text-xs text-text outline-none focus:border-primary"
+            className="w-full p-3 rounded-input border border-border bg-surface text-text text-xs focus:border-primary outline-none resize-none leading-relaxed"
             required
           />
         </div>
 
-        <Button type="submit" variant="primary" size="lg" className="mt-2">
-          Submit Review
+        <Button type="submit" variant="primary" size="lg" fullWidth disabled={isLoading} className="mt-2">
+          {isLoading ? 'Submitting...' : 'Submit Review'}
         </Button>
       </form>
     </Sheet>

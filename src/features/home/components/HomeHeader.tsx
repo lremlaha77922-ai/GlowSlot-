@@ -1,43 +1,55 @@
 import React from 'react';
-import { MapPin, ChevronDown, Bell, ShoppingBag, Sparkles, Sun, Moon, Globe } from 'lucide-react';
-import { useSessionStore } from '../../../store/useSessionStore';
+import {
+  MapPin,
+  ChevronDown,
+  ShoppingBag,
+  Bell,
+  Sparkles,
+  Globe,
+  Sun,
+  Moon,
+  User,
+} from 'lucide-react';
 import { useCartStore } from '../../../store/useCartStore';
+import { useSessionStore } from '../../../store/useSessionStore';
 import { useUIStore } from '../../../store/useUIStore';
-import { changeLanguage } from '../../../lib/i18n';
 
 interface HomeHeaderProps {
   onOpenLocation: () => void;
   onOpenCart: () => void;
+  onOpenNotifications: () => void;
+  onOpenProfile: () => void;
+  onOpenPoints: () => void;
 }
 
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
   onOpenLocation,
   onOpenCart,
+  onOpenNotifications,
+  onOpenProfile,
+  onOpenPoints,
 }) => {
   const { user } = useSessionStore();
-  const cartCount = useCartStore((state) => state.getTotalCount());
-  const { selectedLocation, theme, setTheme, language, setLanguage, showToast } = useUIStore();
+  const { getTotalCount } = useCartStore();
+  const { selectedLocation, theme, toggleTheme, language, toggleLanguage, showToast } =
+    useUIStore();
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
-  const toggleLanguage = () => {
-    const next = language === 'en' ? 'hi' : 'en';
-    setLanguage(next);
-    changeLanguage(next);
-  };
+  const cartCount = getTotalCount();
 
   return (
     <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-border/80 px-4 pt-3 pb-3">
       {/* Top utility row: Points Chip, Theme, Lang, Bell, Cart */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5">
-          {/* Points Chip */}
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-chip bg-primary-soft text-primary border border-primary/20 text-xs font-bold shadow-2xs">
+          {/* Points Chip -> S26 */}
+          <button
+            onClick={onOpenPoints}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-chip bg-primary-soft text-primary border border-primary/20 text-xs font-bold shadow-2xs hover:bg-primary-soft/80 cursor-pointer"
+            aria-label="View points"
+          >
             <Sparkles size={13} className="text-deal" />
             <span className="tabular-nums">{user?.points ?? 0} pts</span>
-          </div>
+          </button>
 
           {/* Language Toggle */}
           <button
@@ -60,9 +72,9 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Notifications Bell */}
+          {/* Notifications Bell -> S21 */}
           <button
-            onClick={() => showToast('Notifications will arrive in Phase 4C.')}
+            onClick={onOpenNotifications}
             className="relative w-9 h-9 rounded-full bg-surface border border-border flex items-center justify-center text-text hover:bg-primary-soft/50 transition-colors cursor-pointer"
             aria-label="Notifications"
           >
@@ -86,20 +98,32 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
         </div>
       </div>
 
-      {/* Main Greeting & Location Selector */}
+      {/* Main Greeting & Avatar -> S22 Profile */}
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-muted font-medium">Hello, {user?.name || 'Guest'} 👋</p>
-          <button
-            onClick={onOpenLocation}
-            className="flex items-center gap-1 text-sm font-bold text-text hover:text-primary transition-colors cursor-pointer text-left"
-            aria-label="Change location"
-          >
-            <MapPin size={15} className="text-primary shrink-0" />
-            <span className="max-w-[200px] truncate">{selectedLocation}</span>
-            <ChevronDown size={14} className="text-muted shrink-0" />
-          </button>
-        </div>
+        <button
+          onClick={onOpenProfile}
+          className="flex items-center gap-2 text-left cursor-pointer group"
+          aria-label="Open profile"
+        >
+          <div className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shadow-xs group-hover:brightness-105">
+            {user?.name ? user.name.charAt(0).toUpperCase() : 'G'}
+          </div>
+          <div>
+            <p className="text-xs text-muted font-medium">Hello, {user?.name || 'Guest'} 👋</p>
+            <span className="text-[10px] text-primary font-bold group-hover:underline">View Profile</span>
+          </div>
+        </button>
+
+        {/* Location Selector */}
+        <button
+          onClick={onOpenLocation}
+          className="flex items-center gap-1 text-xs font-bold text-text hover:text-primary transition-colors cursor-pointer text-right"
+          aria-label="Change location"
+        >
+          <MapPin size={13} className="text-primary shrink-0" />
+          <span className="max-w-[140px] truncate">{selectedLocation}</span>
+          <ChevronDown size={12} className="text-muted shrink-0" />
+        </button>
       </div>
     </header>
   );

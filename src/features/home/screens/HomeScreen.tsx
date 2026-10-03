@@ -1,84 +1,76 @@
-import React from 'react';
-import { useHomeData } from '../hooks/useHomeData';
+import React, { useState } from 'react';
 import { HomeHeader } from '../components/HomeHeader';
 import { PromoCarousel } from '../components/PromoCarousel';
 import { QuickServicesSection } from '../components/QuickServicesSection';
 import { LastMinuteDealsSection } from '../components/LastMinuteDealsSection';
 import { PopularSalonsSection } from '../components/PopularSalonsSection';
-import { ReferCard } from '../components/ReferCard';
-import { Skeleton } from '../../../components/Skeleton';
-import { EmptyState } from '../../../components/EmptyState';
-import { AlertCircle } from 'lucide-react';
+import { ReferralCard } from '../components/ReferralCard';
+import { PullToRefresh } from '../../../components/PullToRefresh';
+import { useUIStore } from '../../../store/useUIStore';
+import { mockBanners, mockQuickServices, mockSalons } from '../../../data/mockData';
 
 interface HomeScreenProps {
   onOpenLocation: () => void;
   onOpenCart: () => void;
-  onSelectSalon?: (salonId: string) => void;
+  onSelectSalon: (salonId: string) => void;
+  onOpenNotifications?: () => void;
+  onOpenProfile?: () => void;
+  onOpenPoints?: () => void;
+  onOpenRefer?: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenLocation,
   onOpenCart,
   onSelectSalon,
+  onOpenNotifications = () => {},
+  onOpenProfile = () => {},
+  onOpenPoints = () => {},
+  onOpenRefer = () => {},
 }) => {
-  const { banners, quickServices, deals, popularSalons, isLoading, error } =
-    useHomeData();
+  const { showToast } = useUIStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  if (error) {
-    return (
-      <div className="flex-1 pb-20">
-        <HomeHeader onOpenLocation={onOpenLocation} onOpenCart={onOpenCart} />
-        <EmptyState
-          icon={<AlertCircle size={28} className="text-error" />}
-          title="Could not load salons"
-          helperText={error}
-          actionLabel="Try Again"
-          onAction={() => window.location.reload()}
-        />
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex-1 pb-20">
-        <HomeHeader onOpenLocation={onOpenLocation} onOpenCart={onOpenCart} />
-        <div className="p-4 flex flex-col gap-4">
-          <Skeleton className="w-full aspect-[16/7]" radius="card" />
-          <div className="flex gap-3 overflow-hidden">
-            <Skeleton className="w-[140px] h-40 shrink-0" radius="card" />
-            <Skeleton className="w-[140px] h-40 shrink-0" radius="card" />
-            <Skeleton className="w-[140px] h-40 shrink-0" radius="card" />
-          </div>
-          <div className="flex flex-col gap-3">
-            <Skeleton className="w-full h-24" radius="card" />
-            <Skeleton className="w-full h-24" radius="card" />
-            <Skeleton className="w-full h-24" radius="card" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    setIsRefreshing(false);
+    showToast('Feed refreshed with latest salon slots.');
+  };
 
   return (
-    <div className="flex-1 pb-20">
-      {/* 1. Header per Design.md 8.3 */}
-      <HomeHeader onOpenLocation={onOpenLocation} onOpenCart={onOpenCart} />
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="flex-1 pb-24 bg-bg text-text">
+        {/* Top App Bar (Header with points, search, location, profile, bell, cart) */}
+        <HomeHeader
+          onOpenLocation={onOpenLocation}
+          onOpenCart={onOpenCart}
+          onOpenNotifications={onOpenNotifications}
+          onOpenProfile={onOpenProfile}
+          onOpenPoints={onOpenPoints}
+        />
 
-      {/* 2. Promo Carousel (3 banners, 16:7, 5s auto-scroll) */}
-      <PromoCarousel banners={banners} />
+        {/* Promotional Banners Carousel */}
+        <PromoCarousel banners={mockBanners} />
 
-      {/* 3. Quick Services (30 min, 140px cards, ADD stepper) */}
-      <QuickServicesSection services={quickServices} />
+        {/* Quick Services Section */}
+        <QuickServicesSection services={mockQuickServices} />
 
-      {/* 4. Last-Minute Deals (260px cards, countdown timer, wired to S04) */}
-      <LastMinuteDealsSection deals={deals} onSelectSalon={onSelectSalon} />
+        {/* Dynamic Deals & Off-Peak Slots Section */}
+        <LastMinuteDealsSection
+          deals={mockSalons.filter((s) => s.isDeal)}
+          onSelectSalon={onSelectSalon}
+        />
 
-      {/* 5. Popular Salons (vertical list, wired to S04) */}
-      <PopularSalonsSection salons={popularSalons} onSelectSalon={onSelectSalon} />
+        {/* Popular Neighborhood Salons List */}
+        <PopularSalonsSection
+          salons={mockSalons}
+          onSelectSalon={onSelectSalon}
+        />
 
-      {/* 6. Refer and Earn (compact card) */}
-      <ReferCard />
-    </div>
+        {/* Refer & Earn Banner Card -> S27 */}
+        <ReferralCard onReferClick={onOpenRefer} />
+      </div>
+    </PullToRefresh>
   );
 };
