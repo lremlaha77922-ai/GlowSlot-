@@ -26,7 +26,7 @@ npm run dev
 ```
 
 ### 4. Build
-Build the production package:
+Build the web production package:
 ```bash
 npm run build
 ```
@@ -45,6 +45,46 @@ npm test
 
 ---
 
+## Android (Capacitor) Build Guide
+
+### 1. Initialize & Add Android Platform
+Ensure the web app build is up to date, then add the Android platform:
+```bash
+npm run build
+npx cap add android
+```
+
+### 2. Sync Assets & Plugins
+Copy web assets and update native plugins:
+```bash
+npx cap sync android
+```
+
+### 3. Open in Android Studio
+Open the generated Android project in Android Studio:
+```bash
+npx cap open android
+```
+
+### 4. App Icon & Splash Assets
+Place branded app icons and splash screens in `/assets/brand`:
+- `app_icon.png` (1024x1024)
+- `splash.png` (2732x2732)
+
+Generate native launcher resources with `@capacitor/assets`:
+```bash
+npx @capacitor/assets generate --android
+```
+
+### 5. Production Release Build (Keystore Security)
+To build a signed release APK or Android App Bundle (AAB):
+1. In Android Studio, go to **Build > Generate Signed Bundle / APK**.
+2. Select **Android App Bundle** or **APK**.
+3. Generate or choose your release keystore.
+4. **Keystore Security Note**: Never commit keystore files (`*.jks`, `*.keystore`) or passwords to git repository. Keystores are strictly listed in `.gitignore`.
+
+---
+
 ## Project Structure
 Follows `Engineering-Practices.md`:
 ```
@@ -60,12 +100,9 @@ src/
     cart/
     bookings/
     shop/
-    profile/
     notifications/
-  lib/            # supabase client, query client, i18n setup
-  store/          # Zustand stores (cart, ui, session)
-  theme/          # tokens.css, tailwind config, typography
-  utils/          # pure helpers (money, dates, pricing, validation)
-  types/          # shared domain types
-  locales/        # en.json, hi.json
+    profile/
+  store/          # Zustand state stores
+  utils/          # pure functions (pricing, money, validators)
+  theme/          # CSS design tokens
 ```

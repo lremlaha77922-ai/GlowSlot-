@@ -1,22 +1,51 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { authService } from '../features/auth/services/authService';
 import { salonService } from '../features/salons/services/salonService';
 import { slotService } from '../features/slots/services/slotService';
 import { bookingService } from '../features/bookings/services/bookingService';
 import { couponService } from '../features/cart/services/couponService';
-import { useSessionStore } from '../store/useSessionStore';
+import { supabase } from '../lib/supabase';
 
 describe('E2E Integration Test: User Lifecycle & Booking Journey (P6A)', () => {
-  it('executes the full booking lifecycle: OTP -> Explore -> Hold -> Book -> Reschedule -> Cancel', async () => {
-    const testPhone = '9876543210';
+  it('executes the full booking lifecycle: Sign Up -> Explore -> Hold -> Book -> Reschedule -> Cancel', async () => {
+    vi.restoreAllMocks();
+    const testEmail = 'e2e_user@glowslot.com';
+    const testPassword = 'password123';
+    const mockId = '00000000-0000-0000-0000-000000000099';
 
-    // Step 1: Sign up and verify OTP
-    const otpSent = await authService.sendOtp(testPhone);
-    expect(otpSent.success).toBe(true);
+    vi.spyOn(supabase.auth, 'signUp').mockResolvedValueOnce({
+      data: {
+        user: { id: mockId, email: testEmail } as any,
+        session: { access_token: 'fake-token' } as any,
+      },
+      error: null,
+    });
 
-    const verify = await authService.verifyOtp(testPhone, '123456');
-    expect(verify.success).toBe(true);
-    const userId = useSessionStore.getState().user?.id || 'usr-test-123';
+    vi.spyOn(supabase.auth, 'signInWithPassword').mockResolvedValueOnce({
+      data: {
+        user: { id: mockId, email: testEmail } as any,
+        session: { access_token: 'fake-token' } as any,
+      },
+      error: null,
+    });
+
+    vi.spyOn(supabase, 'from').mockReturnValue({
+      upsert: vi.fn().mockResolvedValue({ error: null }),
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { id: mockId, full_name: 'Aarav E2E', gender: 'male', points: 100 },
+        error: null,
+      }),
+    } as any);
+
+    // Step 1: Sign up with Email and Password
+    const signUpRes = await authService.signUpWithEmail(testEmail, testPassword, 'Aarav E2E', 'male');
+    expect(signUpRes.success).toBe(true);
+
+    const loginRes = await authService.signInWithEmail(testEmail, testPassword);
+    expect(loginRes.success).toBe(true);
+    const userId = loginRes.session?.id || mockId;
 
     // Step 2: Explore salons and select service
     const salons = await salonService.list();

@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Salon, SalonServiceItem, PackageItem } from '../../../types';
+import { Salon, SalonServiceItem, PackageItem, ReviewItem } from '../../../types';
 import { salonService } from '../services/salonService';
+import { ReviewPhotoGallery } from '../components/ReviewPhotoGallery';
+import { WriteReviewModal } from '../components/WriteReviewModal';
+import { InteractiveSalonMap } from '../../../components/InteractiveSalonMap';
 import { formatMoney } from '../../../utils/money';
 import { Button } from '../../../components/Button';
 import { Skeleton } from '../../../components/Skeleton';
+import { useFavoritesStore } from '../../../store/useFavoritesStore';
 import {
   ArrowLeft,
   Heart,
@@ -14,6 +18,9 @@ import {
   ShieldCheck,
   ChevronRight,
   Sparkles,
+  Flame,
+  CheckCircle2,
+  Calendar,
 } from 'lucide-react';
 import { useUIStore } from '../../../store/useUIStore';
 
@@ -21,19 +28,27 @@ interface SalonDetailScreenProps {
   salonId: string;
   onBack: () => void;
   onSelectServiceForSlot: (salon: Salon, service: { id: string; name: string; durationMin: number; basePrice: number }) => void;
+  onSelectSalon?: (salonId: string) => void;
+  onBookNowModal?: (salon: Salon) => void;
 }
 
 export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
   salonId,
   onBack,
   onSelectServiceForSlot,
+  onSelectSalon,
+  onBookNowModal,
 }) => {
   const [salon, setSalon] = useState<Salon | null>(null);
+  const [similarSalons, setSimilarSalons] = useState<Salon[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'services' | 'packages' | 'reviews' | 'about'>('services');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isFav, setIsFav] = useState(false);
+  const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
+  const [reviewsList, setReviewsList] = useState<ReviewItem[]>([]);
 
+  const { isFavorite, toggleFavorite } = useFavoritesStore();
   const { showToast } = useUIStore();
 
   useEffect(() => {
@@ -41,10 +56,25 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
       setIsLoading(true);
       const data = await salonService.get(salonId);
       setSalon(data);
+      if (data?.reviews) {
+        setReviewsList(data.reviews);
+      }
+
+      // Load similar salons nearby
+      const allSalons = await salonService.list();
+      const nearby = allSalons
+        .filter((s) => s.id !== salonId)
+        .sort((a, b) => a.distanceKm - b.distanceKm);
+      setSimilarSalons(nearby);
+
       setIsLoading(false);
     };
     load();
   }, [salonId]);
+
+  const handleAddReview = (newReview: ReviewItem) => {
+    setReviewsList((prev) => [newReview, ...prev]);
+  };
 
   if (isLoading || !salon) {
     return (
@@ -150,136 +180,105 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
         )}
       </div>
 
-      {/* Salon Header Info */}
-      <div className="p-4 bg-surface border-b border-border">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-lg font-bold text-text leading-tight">{salon.name}</h1>
-            <div className="flex items-center gap-1.5 text-xs text-muted mt-1">
-              <MapPin size={13} className="text-primary shrink-0" />
-              <span className="truncate">{salon.area}, {salon.city}</span>
-              <span>•</span>
-              <span className="shrink-0">{salon.distanceKm} km</span>
+      <main className="p-4 max-w-lg mx-auto flex flex-col gap-5">
+        {/* Salon Header Details */}
+        <div className="bg-surface rounded-card border border-border p-4 shadow-level-1 flex flex-col gap-2.5">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-lg font-extrabold text-text tracking-tight">{salon.name}</h1>
+                <CheckCircle2 size={16} className="text-primary fill-primary/10 shrink-0" />
+              </div>
+              <p className="text-xs text-muted mt-0.5">{salon.categories?.join(', ')}</p>
             </div>
-          </div>
-          <div className="flex flex-col items-end shrink-0">
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-chip bg-deal/15 text-stone-900 dark:text-deal font-bold text-xs">
-              <Star size={13} className="fill-deal text-deal" />
+
+            <div className="flex items-center gap-1 bg-deal/15 text-deal px-2.5 py-1 rounded-chip font-extrabold text-xs">
+              <Star size={13} className="fill-deal" />
               <span>{salon.rating}</span>
             </div>
-            <span className="text-[10px] text-muted mt-0.5">
-              {salon.reviewCount} reviews
+          </div>
+
+          <div className="flex items-center gap-3 text-xs text-muted pt-2 border-t border-border">
+            <span className="flex items-center gap-1">
+              <MapPin size={13} className="text-primary" /> {salon.area} ({salon.distanceKm} km)
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock size={13} className="text-primary" /> {salon.isOpen ? 'Open Now' : 'Closed'}
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border/60 text-xs">
-          <div className="flex items-center gap-1.5 text-muted">
-            <Clock size={13} />
-            <span>{salon.openingHours}</span>
-          </div>
-          <span className="text-border">•</span>
-          <span className={`font-semibold ${salon.isOpen ? 'text-success' : 'text-error'}`}>
-            {salon.isOpen ? 'Open Now' : 'Closed'}
-          </span>
+        {/* Tabs: Services, Packages, Reviews, About */}
+        <div className="flex items-center gap-1 bg-muted/15 p-1 rounded-button border border-border">
+          {(['services', 'packages', 'reviews', 'about'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-2 rounded-[8px] text-xs font-bold capitalize transition-all cursor-pointer ${
+                activeTab === tab
+                  ? 'bg-surface text-primary shadow-xs'
+                  : 'text-muted hover:text-text'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
-      </div>
 
-      {/* Sticky Tab Navigation per Design.md 8.5 */}
-      <div className="sticky top-14 z-30 bg-surface border-b border-border flex items-center justify-around px-2 shadow-xs">
-        {(['services', 'packages', 'reviews', 'about'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`py-3 px-3 text-xs font-bold capitalize transition-all border-b-2 cursor-pointer ${
-              activeTab === tab
-                ? 'text-primary border-primary'
-                : 'text-muted border-transparent hover:text-text'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      <main className="p-4">
-        {/* Services Tab */}
+        {/* Tab Content */}
         {activeTab === 'services' && (
           <div className="flex flex-col gap-3">
-            {salon.services?.map((service) => (
-              <div
-                key={service.id}
-                className="bg-surface rounded-card border border-border/80 shadow-level-1 p-3.5 flex items-center justify-between gap-3 hover:border-primary/40 transition-all"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary-soft px-1.5 py-0.5 rounded-[4px]">
-                      {service.category}
-                    </span>
-                    <span className="text-xs text-muted flex items-center gap-1">
-                      <Clock size={11} /> {service.durationMin} mins
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold text-text mt-1">{service.name}</h3>
-                  {service.description && (
-                    <p className="text-xs text-muted mt-0.5 line-clamp-1">
-                      {service.description}
-                    </p>
-                  )}
-                  <div className="mt-2 text-sm font-bold text-text tabular-nums">
-                    {formatMoney(service.basePrice)}
-                  </div>
-                </div>
-
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => handleSelectService(service)}
-                  className="shrink-0"
+            <h3 className="text-xs font-bold text-text uppercase tracking-wider">
+              Available Services & Slots
+            </h3>
+            <div className="flex flex-col gap-2.5">
+              {salon.services?.map((srv) => (
+                <div
+                  key={srv.id}
+                  className="bg-surface rounded-card border border-border/80 p-3.5 flex items-center justify-between gap-3 shadow-xs hover:border-primary/40 transition-all"
                 >
-                  Select Slot
-                </Button>
-              </div>
-            ))}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-xs font-bold text-text">{srv.name}</h4>
+                    <p className="text-[11px] text-muted mt-0.5">{srv.durationMin} mins • Popular grooming</p>
+                    <span className="text-xs font-extrabold text-primary block mt-1 tabular-nums">
+                      {formatMoney(srv.basePrice)}
+                    </span>
+                  </div>
+
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => handleSelectService(srv)}
+                    className="shrink-0 font-bold"
+                  >
+                    Select Slot
+                  </Button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Packages Tab */}
         {activeTab === 'packages' && (
-          <div className="flex flex-col gap-3.5">
-            {salon.packages && salon.packages.length > 0 ? (
-              salon.packages.map((pkg) => (
-                <div
-                  key={pkg.id}
-                  className="bg-surface rounded-card border border-border/80 shadow-level-1 p-4 flex flex-col justify-between gap-3 relative overflow-hidden"
-                >
-                  <div className="absolute top-0 right-0 bg-deal text-stone-900 text-[10px] font-bold px-2 py-0.5 rounded-bl-[8px]">
-                    Value Pack
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-bold text-text">{pkg.name}</h3>
-                    <p className="text-xs text-muted mt-0.5">{pkg.description}</p>
-                    <div className="flex flex-wrap gap-1.5 mt-2.5">
-                      {pkg.inclusions.map((inc, i) => (
-                        <span
-                          key={i}
-                          className="text-[11px] px-2 py-0.5 rounded-chip bg-primary-soft text-primary font-medium flex items-center gap-1"
-                        >
-                          <Sparkles size={10} /> {inc}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-border mt-1">
+          <div className="flex flex-col gap-3">
+            <h3 className="text-xs font-bold text-text uppercase tracking-wider">
+              Combo Packages & Deals
+            </h3>
+            <div className="flex flex-col gap-2.5">
+              {salon.packages && salon.packages.length > 0 ? (
+                salon.packages.map((pkg) => (
+                  <div
+                    key={pkg.id}
+                    className="bg-surface rounded-card border border-border/80 p-3.5 flex items-center justify-between gap-3 shadow-xs"
+                  >
                     <div>
-                      <span className="text-[10px] text-muted block uppercase">Package Price</span>
-                      <span className="text-base font-bold text-primary tabular-nums">
+                      <h4 className="text-xs font-bold text-text">{pkg.name}</h4>
+                      <p className="text-[11px] text-muted mt-0.5">{pkg.durationMin} mins • Best Value</p>
+                      <span className="text-xs font-extrabold text-deal block mt-1 tabular-nums">
                         {formatMoney(pkg.price)}
                       </span>
                     </div>
+
                     <Button
                       variant="primary"
                       size="sm"
@@ -288,20 +287,18 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
                       Select Slot
                     </Button>
                   </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-xs text-muted text-center py-8">
-                No active packages available for this salon.
-              </p>
-            )}
+                ))
+              ) : (
+                <p className="text-xs text-muted text-center py-8">
+                  No active packages available for this salon.
+                </p>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Reviews Tab */}
         {activeTab === 'reviews' && (
           <div className="flex flex-col gap-4">
-            {/* Rating summary */}
             <div className="bg-surface rounded-card border border-border p-4 flex items-center justify-around shadow-xs">
               <div className="text-center">
                 <span className="text-3xl font-extrabold text-text">{salon.rating}</span>
@@ -311,45 +308,25 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
                   ))}
                 </div>
                 <span className="text-[11px] text-muted mt-1 block">
-                  Based on {salon.reviewCount} verified reviews
+                  Based on {reviewsList.length || salon.reviewCount} verified reviews
                 </span>
               </div>
             </div>
 
-            {/* Reviews List */}
-            <div className="flex flex-col gap-3">
-              {salon.reviews?.map((rev) => (
-                <div
-                  key={rev.id}
-                  className="bg-surface rounded-card border border-border p-3.5 flex flex-col gap-2 shadow-xs"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-text">{rev.authorName}</span>
-                    <span className="text-[11px] text-muted">{rev.date}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-deal">
-                    {Array.from({ length: rev.rating }).map((_, i) => (
-                      <Star key={i} size={12} className="fill-deal" />
-                    ))}
-                  </div>
-                  <p className="text-xs text-text leading-relaxed">{rev.comment}</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {rev.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-[10px] px-2 py-0.5 rounded-chip bg-muted/15 text-muted font-medium"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ReviewPhotoGallery
+              reviews={reviewsList}
+              onOpenWriteReview={() => setIsWriteReviewOpen(true)}
+            />
+
+            <WriteReviewModal
+              isOpen={isWriteReviewOpen}
+              onClose={() => setIsWriteReviewOpen(false)}
+              salonName={salon.name}
+              onSubmitReview={handleAddReview}
+            />
           </div>
         )}
 
-        {/* About Tab */}
         {activeTab === 'about' && (
           <div className="flex flex-col gap-4">
             <div className="bg-surface rounded-card border border-border p-4 shadow-xs">
@@ -368,6 +345,25 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
               <p className="text-xs text-text">{salon.address}</p>
             </div>
 
+            {/* Interactive Salon Map Integration */}
+            <div className="bg-surface rounded-card border border-border p-4 shadow-xs flex flex-col gap-2.5">
+              <h3 className="text-xs font-bold text-text uppercase tracking-wider">
+                Salon Location & Nearby Radar
+              </h3>
+              <InteractiveSalonMap
+                salons={[salon, ...similarSalons]}
+                selectedSalonId={salon.id}
+                onSelectSalon={(id) => {
+                  if (onSelectSalon) onSelectSalon(id);
+                }}
+                onBookNow={(s) => {
+                  if (onBookNowModal) onBookNowModal(s);
+                  else if (onSelectSalon) onSelectSalon(s.id);
+                }}
+                className="h-[280px]"
+              />
+            </div>
+
             <div className="bg-surface rounded-card border border-border p-4 shadow-xs">
               <h3 className="text-xs font-bold text-text uppercase tracking-wider mb-2">
                 Amenities & Hygiene
@@ -383,6 +379,128 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
             </div>
           </div>
         )}
+
+        {/* SIMILAR SALONS NEARBY RECOMMENDATION SECTION */}
+        <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-border">
+          <h3 className="text-xs font-extrabold text-text uppercase tracking-wider flex items-center gap-1.5">
+            <Sparkles size={15} className="text-primary" /> Similar salons nearby
+          </h3>
+
+          <div className="flex overflow-x-auto gap-3.5 no-scrollbar pb-2 pt-1 -mx-4 px-4">
+            {similarSalons.map((sim) => {
+              const simFav = isFavorite(sim.id);
+              const staffCount = sim.availableSlotsToday ? Math.min(5, Math.max(2, sim.availableSlotsToday % 6)) : 3;
+
+              return (
+                <div
+                  key={sim.id}
+                  onClick={() => {
+                    if (onSelectSalon) onSelectSalon(sim.id);
+                  }}
+                  className="w-[260px] sm:w-[280px] shrink-0 bg-surface rounded-card border border-border/80 shadow-level-1 overflow-hidden flex flex-col justify-between cursor-pointer hover:border-primary/50 transition-all group"
+                >
+                  <div>
+                    {/* Cover Image & Badges */}
+                    <div className="h-32 w-full relative bg-muted/20 overflow-hidden">
+                      <img
+                        src={sim.images[0]}
+                        alt={sim.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+
+                      {/* Offer badge */}
+                      <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
+                        <span className="text-[9px] font-black uppercase bg-deal text-white px-2 py-0.5 rounded-chip shadow-xs">
+                          15% OFF on first online booking
+                        </span>
+                        {sim.rating >= 4.8 && (
+                          <span className="text-[9px] font-black uppercase bg-purple-600 text-white px-2 py-0.5 rounded-chip shadow-xs flex items-center gap-0.5 w-fit">
+                            <Flame size={10} /> Trending
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Favourite Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const added = toggleFavorite(sim.id);
+                          showToast(added ? `Saved ${sim.name} to favorites` : `Removed ${sim.name} from favorites`);
+                        }}
+                        className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-black/40 backdrop-blur-md text-white hover:text-accent transition-colors cursor-pointer"
+                        aria-label="Favourite"
+                      >
+                        <Heart size={14} className={simFav ? 'fill-accent text-accent' : ''} />
+                      </button>
+
+                      {/* Open Now Badge */}
+                      <div className="absolute bottom-2 left-2">
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-chip bg-emerald-600/90 text-white backdrop-blur-xs">
+                          {sim.isOpen ? 'Open Now' : 'Closed'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="p-3 flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <h4 className="text-xs font-bold text-text truncate">{sim.name}</h4>
+                          <CheckCircle2 size={13} className="text-primary shrink-0" />
+                        </div>
+                        <span className="flex items-center gap-0.5 text-xs font-bold text-text shrink-0">
+                          <Star size={11} className="fill-deal text-deal" /> {sim.rating}
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-muted truncate">{sim.categories?.[0] || 'Grooming & Salon'}</p>
+
+                      <div className="flex items-center gap-1 text-[11px] text-muted">
+                        <MapPin size={11} className="text-primary shrink-0" />
+                        <span className="truncate">{sim.area}</span>
+                        <span>•</span>
+                        <span className="font-semibold">{sim.distanceKm} km</span>
+                      </div>
+
+                      <span className="text-[10px] text-muted font-medium capitalize">
+                        Gender: {sim.gender || 'Unisex'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Pricing & Book CTA */}
+                  <div className="p-3 pt-0 flex items-center justify-between border-t border-border/60 mt-1">
+                    <div>
+                      <span className="text-[9px] text-muted uppercase font-semibold block">Starts from</span>
+                      <span className="text-xs font-extrabold text-primary tabular-nums">
+                        {formatMoney(sim.startingPrice)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                        🟢 {staffCount} staff
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onBookNowModal) {
+                            onBookNowModal(sim);
+                          } else if (onSelectSalon) {
+                            onSelectSalon(sim.id);
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-button bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                      >
+                        Book
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </main>
 
       {/* Sticky Bottom Bar per Design.md 8.5: price hint + Book Appointment */}

@@ -13,6 +13,7 @@ import { CheckoutScreen } from '../features/cart/screens/CheckoutScreen';
 import { BookingSuccessScreen } from '../features/bookings/screens/BookingSuccessScreen';
 import { BookingsListScreen } from '../features/bookings/screens/BookingsListScreen';
 import { BookingDetailScreen } from '../features/bookings/screens/BookingDetailScreen';
+import { BookingSummaryScreen } from '../features/bookings/screens/BookingSummaryScreen';
 import { AtHomeScreen } from '../features/athome/screens/AtHomeScreen';
 import { ShopListScreen } from '../features/shop/screens/ShopListScreen';
 import { ProductDetailScreen } from '../features/shop/screens/ProductDetailScreen';
@@ -20,13 +21,17 @@ import { WishlistScreen } from '../features/shop/screens/WishlistScreen';
 import { NotificationsScreen } from '../features/notifications/screens/NotificationsScreen';
 import { ProfileMainScreen } from '../features/profile/screens/ProfileMainScreen';
 import { EditProfileScreen } from '../features/profile/screens/EditProfileScreen';
+import { BookingHistoryScreen } from '../features/profile/screens/BookingHistoryScreen';
 import { SavedAddressesScreen } from '../features/profile/screens/SavedAddressesScreen';
 import { FavouriteSalonsScreen } from '../features/profile/screens/FavouriteSalonsScreen';
 import { WalletPointsScreen } from '../features/profile/screens/WalletPointsScreen';
+import { QRPaymentScreen } from '../features/profile/screens/QRPaymentScreen';
 import { ReferEarnScreen } from '../features/profile/screens/ReferEarnScreen';
 import { SettingsScreen } from '../features/profile/screens/SettingsScreen';
 import { HelpSupportScreen } from '../features/profile/screens/HelpSupportScreen';
 import { TermsPrivacyScreen } from '../features/profile/screens/TermsPrivacyScreen';
+import { AdminDashboard } from '../components/admin/AdminDashboard';
+import { BookServiceModal } from '../features/salons/components/BookServiceModal';
 import { BottomTabBar } from '../components/BottomTabBar';
 import { LocationSheet } from '../features/home/components/LocationSheet';
 import { OfflineBanner } from '../components/OfflineBanner';
@@ -39,6 +44,7 @@ import { Salon, SlotItem, Booking } from '../types';
 import { mockSalons } from '../data/mockData';
 import { bookingService } from '../features/bookings/services/bookingService';
 import { authService } from '../features/auth/services/authService';
+import { App as CapacitorApp } from '@capacitor/app';
 
 type ViewMode =
   | 'splash'
@@ -53,18 +59,22 @@ type ViewMode =
   | 'checkout'
   | 'bookingSuccess'
   | 'bookingDetail'
+  | 'bookingSummary'
   | 'productDetail'
   | 'wishlist'
   | 'notifications'
   | 'profile'
   | 'editProfile'
+  | 'bookingHistory'
   | 'savedAddresses'
   | 'favouriteSalons'
   | 'walletPoints'
+  | 'qrPayment'
   | 'referEarn'
   | 'settings'
   | 'helpSupport'
-  | 'termsPrivacy';
+  | 'termsPrivacy'
+  | 'adminDashboard';
 
 export const AppShell: React.FC = () => {
   const {
@@ -84,6 +94,98 @@ export const AppShell: React.FC = () => {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [reschedulingBooking, setReschedulingBooking] = useState<Booking | null>(null);
+  const [bookingModalSalon, setBookingModalSalon] = useState<Salon | null>(null);
+
+  const handleOpenBookModal = (salon: Salon) => {
+    setBookingModalSalon(salon);
+  };
+
+  const [bookingSummaryContext, setBookingSummaryContext] = useState<{
+    salon: Salon;
+    services: any[];
+    specialist: any | null;
+    slot: SlotItem;
+    customerDetails: any;
+    pricingSummary: any;
+  } | null>(null);
+
+  const handleBookModalContinue = (
+    salon: Salon,
+    selectedServices: any[],
+    selectedSpecialist: any | null,
+    selectedSlot: SlotItem,
+    pricingSummary: {
+      subtotal: number;
+      discount: number;
+      total: number;
+      deposit: number;
+      balanceAtSalon: number;
+      couponCode?: string;
+    },
+    customerDetails?: any
+  ) => {
+    setBookingSummaryContext({
+      salon,
+      services: selectedServices,
+      specialist: selectedSpecialist,
+      slot: selectedSlot,
+      customerDetails: customerDetails || {
+        name: user?.name || 'Aarav Sharma',
+        phone: user?.phone || '+91 98765 43210',
+        email: user?.email || 'aarav@glowslot.com',
+      },
+      pricingSummary,
+    });
+    setCurrentView('bookingSummary');
+  };
+
+  const handleConfirmBooking = (
+    salon: Salon,
+    selectedServices: any[],
+    selectedSpecialist: any | null,
+    selectedSlot: SlotItem,
+    pricingSummary: any,
+    customerDetails: any
+  ) => {
+    handleBookModalContinue(salon, selectedServices, selectedSpecialist, selectedSlot, pricingSummary, customerDetails);
+  };
+
+  const handleBookingSummaryConfirmPayment = (summaryData: any) => {
+    if (summaryData.bookingId) {
+      setLatestBookingId(summaryData.bookingId);
+      setCurrentView('bookingSuccess');
+    } else {
+      const combinedName = summaryData.services.map((s: any) => s.name).join(' + ');
+      const totalDuration = summaryData.services.reduce((sum: number, s: any) => sum + s.durationMin, 0);
+
+      const serviceNameFinal = summaryData.specialist
+        ? `${combinedName} (Stylist: ${summaryData.specialist.name})`
+        : combinedName;
+
+      addItemWithSlot(
+        {
+          id: summaryData.services.map((s: any) => s.id).join('-'),
+          name: serviceNameFinal,
+          durationMin: totalDuration,
+          basePrice: summaryData.pricingSummary.total,
+        },
+        {
+          slotId: summaryData.slot.id,
+          salonId: summaryData.salon.id,
+          salonName: summaryData.salon.name,
+          serviceName: serviceNameFinal,
+          date: summaryData.slot.date,
+          time: summaryData.slot.time,
+          price: summaryData.pricingSummary.total,
+          isFree: summaryData.slot.isFree,
+          isPeak: summaryData.slot.isPeak,
+        }
+      );
+
+      showToast(`Time slot ${summaryData.slot.time} on ${summaryData.slot.date} locked!`);
+      setCurrentView('checkout');
+    }
+  };
 
   const [slotPickerContext, setSlotPickerContext] = useState<{
     salon: Salon;
@@ -111,6 +213,38 @@ export const AppShell: React.FC = () => {
       document.documentElement.setAttribute('data-theme', 'light');
     }
   }, [theme]);
+
+  // Capacitor Hardware Back Button Handler
+  useEffect(() => {
+    let backListener: any;
+    const setupBackListener = async () => {
+      try {
+        backListener = await CapacitorApp.addListener('backButton', () => {
+          if (isLocationSheetOpen) {
+            setIsLocationSheetOpen(false);
+            return;
+          }
+          if (currentView !== 'tabs') {
+            setCurrentView('tabs');
+            return;
+          }
+          if (activeTab !== 'home') {
+            setActiveTab('home');
+            return;
+          }
+          CapacitorApp.minimizeApp();
+        });
+      } catch {
+        // Web browser environment ignore
+      }
+    };
+    setupBackListener();
+    return () => {
+      if (backListener && typeof backListener.remove === 'function') {
+        backListener.remove();
+      }
+    };
+  }, [currentView, activeTab, isLocationSheetOpen]);
 
   const requireAuth = (targetView: ViewMode): boolean => {
     if (!user) {
@@ -284,7 +418,7 @@ export const AppShell: React.FC = () => {
 
         {currentView === 'login' && (
           <LoginScreen
-            onOtpSent={() => setCurrentView('otpVerify')}
+            onSuccess={() => handlePostAuthNavigate()}
             onContinueAsGuest={() => setCurrentView('tabs')}
           />
         )}
@@ -332,6 +466,14 @@ export const AppShell: React.FC = () => {
               setActiveTab('home');
               setCurrentView('tabs');
             }}
+            onVisitShop={() => {
+              setActiveTab('shop');
+              setCurrentView('tabs');
+            }}
+            onViewAppointments={() => {
+              setActiveTab('bookings');
+              setCurrentView('tabs');
+            }}
           />
         )}
 
@@ -344,12 +486,58 @@ export const AppShell: React.FC = () => {
           />
         )}
 
+        {currentView === 'bookingSummary' && bookingSummaryContext && (
+          <BookingSummaryScreen
+            salon={bookingSummaryContext.salon}
+            services={bookingSummaryContext.services}
+            specialist={bookingSummaryContext.specialist}
+            slot={bookingSummaryContext.slot}
+            customerDetails={bookingSummaryContext.customerDetails}
+            pricingSummary={bookingSummaryContext.pricingSummary}
+            onBack={() => setCurrentView('salonDetail')}
+            onChangeSalon={() => setCurrentView('tabs')}
+            onChangeServices={() => {
+              setBookingModalSalon(bookingSummaryContext.salon);
+            }}
+            onChangeSpecialist={() => {
+              setBookingModalSalon(bookingSummaryContext.salon);
+            }}
+            onChangeSlot={() => {
+              setBookingModalSalon(bookingSummaryContext.salon);
+            }}
+            onChangeContact={() => {
+              setBookingModalSalon(bookingSummaryContext.salon);
+            }}
+            onAddEditNote={(newNote) => {
+              setBookingSummaryContext((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      customerDetails: {
+                        ...prev.customerDetails,
+                        specialInstructions: newNote,
+                      },
+                    }
+                  : null
+              );
+            }}
+            onConfirmPayment={handleBookingSummaryConfirmPayment}
+            onCancelBooking={() => {
+              setBookingSummaryContext(null);
+              setCurrentView('salonDetail');
+              showToast('Booking summary cancelled');
+            }}
+          />
+        )}
+
         {/* Salon Detail & Slot Picker */}
         {currentView === 'salonDetail' && selectedSalonId && (
           <SalonDetailScreen
             salonId={selectedSalonId}
             onBack={() => setCurrentView('tabs')}
             onSelectServiceForSlot={handleSelectServiceForSlot}
+            onSelectSalon={(id) => setSelectedSalonId(id)}
+            onBookNowModal={handleOpenBookModal}
           />
         )}
 
@@ -398,6 +586,7 @@ export const AppShell: React.FC = () => {
           <ProfileMainScreen
             onBack={() => setCurrentView('tabs')}
             onEditProfile={() => setCurrentView('editProfile')}
+            onBookingHistory={() => setCurrentView('bookingHistory')}
             onSavedAddresses={() => setCurrentView('savedAddresses')}
             onFavouriteSalons={() => setCurrentView('favouriteSalons')}
             onWalletPoints={() => setCurrentView('walletPoints')}
@@ -405,8 +594,24 @@ export const AppShell: React.FC = () => {
             onSettings={() => setCurrentView('settings')}
             onHelpSupport={() => setCurrentView('helpSupport')}
             onTermsPrivacy={() => setCurrentView('termsPrivacy')}
+            onAdminDashboard={() => setCurrentView('adminDashboard')}
             onLoggedOut={() => setCurrentView('login')}
           />
+        )}
+
+        {currentView === 'bookingHistory' && (
+          <BookingHistoryScreen
+            onBack={() => setCurrentView('profile')}
+            onSelectBooking={(id) => {
+              setSelectedBookingId(id);
+              setCurrentView('bookingDetail');
+            }}
+            onRebook={handleRebook}
+          />
+        )}
+
+        {currentView === 'adminDashboard' && (
+          <AdminDashboard onBack={() => setCurrentView('profile')} />
         )}
 
         {currentView === 'editProfile' && (
@@ -432,6 +637,15 @@ export const AppShell: React.FC = () => {
           <WalletPointsScreen
             onBack={() => setCurrentView('tabs')}
             onReferClick={() => setCurrentView('referEarn')}
+            onPayQR={() => setCurrentView('qrPayment')}
+            onRedeemQR={() => setCurrentView('qrPayment')}
+          />
+        )}
+
+        {currentView === 'qrPayment' && (
+          <QRPaymentScreen
+            onBack={() => setCurrentView('walletPoints')}
+            onSuccess={() => setCurrentView('walletPoints')}
           />
         )}
 
@@ -454,25 +668,25 @@ export const AppShell: React.FC = () => {
         {/* Main Tabbed Views */}
         {currentView === 'tabs' && (
           <div className="flex-1 flex flex-col">
-            <main className="flex-1">
+            <main className="flex-1 pb-20">
               {activeTab === 'home' && (
                 <HomeScreen
                   onOpenLocation={() => setIsLocationSheetOpen(true)}
                   onOpenCart={() => setCurrentView('cart')}
                   onSelectSalon={handleOpenSalon}
+                  onBookNowModal={handleOpenBookModal}
                   onOpenNotifications={() => setCurrentView('notifications')}
-                  onOpenProfile={() => setCurrentView('profile')}
-                  onOpenPoints={() => setCurrentView('walletPoints')}
+                  onOpenProfile={() => setActiveTab('profile')}
+                  onOpenPoints={() => setActiveTab('rewards')}
                   onOpenRefer={() => setCurrentView('referEarn')}
                 />
               )}
 
-              {activeTab === 'salons' && (
-                <SalonListScreen onSelectSalon={handleOpenSalon} />
-              )}
-
-              {activeTab === 'athome' && (
-                <AtHomeScreen onBookService={handleAtHomeBooking} />
+              {activeTab === 'search' && (
+                <SalonListScreen
+                  onSelectSalon={handleOpenSalon}
+                  onBookNowModal={handleOpenBookModal}
+                />
               )}
 
               {activeTab === 'bookings' && (
@@ -483,20 +697,39 @@ export const AppShell: React.FC = () => {
                   }}
                   onReschedule={handleStartReschedule}
                   onRebook={handleRebook}
-                  onExploreSalons={() => setActiveTab('salons')}
+                  onExploreSalons={() => setActiveTab('search')}
                 />
               )}
 
-              {activeTab === 'shop' && (
-                <ShopListScreen
-                  onSelectProduct={handleOpenProduct}
-                  onOpenWishlist={() => setCurrentView('wishlist')}
+              {activeTab === 'rewards' && (
+                <WalletPointsScreen
+                  onBack={() => setActiveTab('home')}
+                  onReferClick={() => setCurrentView('referEarn')}
+                  onPayQR={() => setCurrentView('qrPayment')}
+                  onRedeemQR={() => setCurrentView('qrPayment')}
+                />
+              )}
+
+              {activeTab === 'profile' && (
+                <ProfileMainScreen
+                  onBack={() => setActiveTab('home')}
+                  onEditProfile={() => setCurrentView('editProfile')}
+                  onBookingHistory={() => setCurrentView('bookingHistory')}
+                  onSavedAddresses={() => setCurrentView('savedAddresses')}
+                  onFavouriteSalons={() => setCurrentView('favouriteSalons')}
+                  onWalletPoints={() => setActiveTab('rewards')}
+                  onReferEarn={() => setCurrentView('referEarn')}
+                  onSettings={() => setCurrentView('settings')}
+                  onHelpSupport={() => setCurrentView('helpSupport')}
+                  onTermsPrivacy={() => setCurrentView('termsPrivacy')}
+                  onAdminDashboard={() => setCurrentView('adminDashboard')}
+                  onLoggedOut={() => setCurrentView('login')}
                 />
               )}
             </main>
 
             {/* Bottom 5-Tab Bar */}
-            <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} />
+            <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} bookingBadgeCount={2} />
           </div>
         )}
 
@@ -505,6 +738,17 @@ export const AppShell: React.FC = () => {
           isOpen={isLocationSheetOpen}
           onClose={() => setIsLocationSheetOpen(false)}
         />
+
+        {/* Book Service Selection Modal */}
+        {bookingModalSalon && (
+          <BookServiceModal
+            isOpen={Boolean(bookingModalSalon)}
+            onClose={() => setBookingModalSalon(null)}
+            salon={bookingModalSalon}
+            onContinue={handleBookModalContinue}
+            onConfirmBooking={handleConfirmBooking}
+          />
+        )}
 
         {/* Toast Container */}
         <ToastContainer />

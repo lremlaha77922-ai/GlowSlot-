@@ -19,13 +19,13 @@ export const QuickServicesSection: React.FC<QuickServicesSectionProps> = ({
   const getServiceIcon = (category: string) => {
     switch (category.toLowerCase()) {
       case 'hair':
-        return <Scissors size={24} className="text-primary" />;
+        return <Scissors size={14} className="text-white" />;
       case 'beard':
-        return <Sparkles size={24} className="text-accent" />;
+        return <Sparkles size={14} className="text-amber-300" />;
       case 'relaxation':
-        return <HeartHandshake size={24} className="text-deal" />;
+        return <HeartHandshake size={14} className="text-rose-300" />;
       default:
-        return <Smile size={24} className="text-success" />;
+        return <Smile size={14} className="text-emerald-300" />;
     }
   };
 
@@ -48,7 +48,7 @@ export const QuickServicesSection: React.FC<QuickServicesSectionProps> = ({
         </span>
       </div>
 
-      {/* Horizontal scroll container with 140px wide cards per Design.md 8.3 */}
+      {/* Horizontal scroll container with 140px wide cards */}
       <div className="flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar scroll-smooth">
         {services.map((service) => {
           const qty = getItemQty(service.id);
@@ -56,42 +56,66 @@ export const QuickServicesSection: React.FC<QuickServicesSectionProps> = ({
           return (
             <div
               key={service.id}
-              className="w-[140px] shrink-0 bg-surface rounded-card border border-border/80 shadow-level-1 p-3 flex flex-col justify-between hover:border-primary/40 transition-all"
+              className="w-[140px] shrink-0 bg-surface rounded-card border border-border/80 shadow-level-1 overflow-hidden flex flex-col justify-between hover:border-primary/50 hover:shadow-level-2 transition-all duration-300 group"
             >
-              {/* Service Icon / Placeholder Image with soft gradient */}
-              <div className="w-full h-20 rounded-button bg-gradient-to-br from-primary-soft/80 to-surface border border-border/50 flex flex-col items-center justify-center mb-2.5">
-                {getServiceIcon(service.category)}
+              {/* Cinematic Image Thumbnail Header */}
+              <div className="w-full h-22 relative overflow-hidden bg-stone-900/10">
+                {service.imageUrl ? (
+                  <img
+                    src={service.imageUrl}
+                    alt={service.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-primary-soft/80 to-surface flex items-center justify-center">
+                    {getServiceIcon(service.category)}
+                  </div>
+                )}
+                
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/70 via-stone-900/20 to-transparent pointer-events-none" />
+
+                {/* Service Category Icon Overlay */}
+                <div className="absolute top-1.5 left-1.5 p-1 rounded-full bg-stone-900/70 backdrop-blur-md border border-white/20 shadow-xs flex items-center justify-center">
+                  {getServiceIcon(service.category)}
+                </div>
               </div>
 
               {/* Service Details */}
-              <div className="mb-3">
-                <h3 className="text-xs font-bold text-text truncate line-clamp-1" title={service.name}>
-                  {service.name}
-                </h3>
-                <div className="flex items-center gap-1 text-[11px] text-muted mt-0.5">
-                  <Clock size={11} />
-                  <span>{service.durationMin}m</span>
-                </div>
-                <div className="flex items-baseline gap-1.5 mt-1.5">
-                  <span className="text-sm font-bold text-text tabular-nums">
-                    {formatMoney(service.price)}
-                  </span>
-                  {service.originalPrice && service.originalPrice > service.price && (
-                    <span className="text-[10px] text-muted line-through tabular-nums">
-                      {formatMoney(service.originalPrice)}
+              <div className="p-2.5 pt-2 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-xs font-bold text-text truncate line-clamp-1" title={service.name}>
+                    {service.name}
+                  </h3>
+                  <div className="flex items-center gap-1 text-[11px] text-muted mt-0.5">
+                    <Clock size={11} />
+                    <span>{service.durationMin}m</span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5 mt-1.5 mb-2">
+                    <span className="text-sm font-bold text-text tabular-nums">
+                      {formatMoney(service.price)}
                     </span>
-                  )}
+                    {service.originalPrice && service.originalPrice > service.price && (
+                      <span className="text-[10px] text-muted line-through tabular-nums">
+                        {formatMoney(service.originalPrice)}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Morphing ADD button per Design.md section 6 */}
-              <AddStepper
-                qty={qty}
-                onAdd={() => handleAdd(service)}
-                onIncrement={() => updateQty(service.id, 1)}
-                onDecrement={() => updateQty(service.id, -1)}
-                className="w-full"
-              />
+                {/* Morphing ADD button */}
+                <AddStepper
+                  qty={qty}
+                  onAdd={() => handleAdd(service)}
+                  onIncrement={() => updateQty(service.id, 1)}
+                  onDecrement={() => updateQty(service.id, -1)}
+                  className="w-full"
+                />
+              </div>
             </div>
           );
         })}

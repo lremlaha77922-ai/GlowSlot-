@@ -6,14 +6,19 @@ interface SessionState {
   user: UserSession | null;
   isGuest: boolean;
   hasSeenOnboarding: boolean;
-  pendingPhone: string;
   returnTarget: string | null;
   setUser: (user: UserSession | null) => void;
-  setPendingPhone: (phone: string) => void;
   setReturnTarget: (target: string | null) => void;
   markOnboardingSeen: () => void;
   continueAsGuest: () => void;
-  verifyOtp: (code: string) => Promise<{ success: boolean; isNewUser: boolean; error?: string }>;
+  loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUpWithEmail: (
+    email: string,
+    password: string,
+    name: string,
+    gender: Gender
+  ) => Promise<{ success: boolean; message?: string; error?: string }>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   setProfile: (name: string, gender: Gender) => Promise<void>;
   updatePoints: (points: number) => void;
   logout: () => Promise<void>;
@@ -77,7 +82,6 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   user: getInitialUser(),
   isGuest: getInitialGuest(),
   hasSeenOnboarding: getInitialOnboarding(),
-  pendingPhone: '',
   returnTarget: null,
 
   setUser: (user) => {
@@ -91,8 +95,6 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     }
   },
 
-  setPendingPhone: (phone) => set({ pendingPhone: phone }),
-
   setReturnTarget: (returnTarget) => set({ returnTarget }),
 
   markOnboardingSeen: () => {
@@ -105,19 +107,13 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({ isGuest: true, user: null });
   },
 
-  verifyOtp: async (code: string) => {
-    const phone = get().pendingPhone || '+91 98765 43210';
-    const result = await authService.verifyOtp(phone, code);
-
-    if (!result.success || !result.session) {
-      return {
-        success: false,
-        isNewUser: false,
-        error: result.error || 'Invalid OTP code',
-      };
+  loginWithEmail: async (email: string, password: string) => {
+    const res = await authService.signInWithEmail(email, password);
+    if (!res.success || !res.session) {
+      return { success: false, error: res.error || 'Invalid email or password' };
     }
 
-    const sessionUser = result.session;
+    const sessionUser = res.session;
     safeStorage.setItem(STORAGE_KEY_USER, JSON.stringify(sessionUser));
     safeStorage.removeItem(STORAGE_KEY_GUEST);
 
@@ -127,10 +123,36 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       hasSeenOnboarding: true,
     });
 
-    return {
-      success: true,
-      isNewUser: !!result.isNewUser,
-    };
+    return { success: true };
+  },
+
+  signUpWithEmail: async (email: string, password: string, name: string, gender: Gender) => {
+    const res = await authService.signUpWithEmail(email, password, name, gender);
+    if (!res.success) {
+      return { success: false, error: res.error || 'Registration failed' };
+    }
+
+    if (res.message) {
+      return { success: true, message: res.message };
+    }
+
+    if (res.session) {
+      const sessionUser = res.session;
+      safeStorage.setItem(STORAGE_KEY_USER, JSON.stringify(sessionUser));
+      safeStorage.removeItem(STORAGE_KEY_GUEST);
+
+      set({
+        user: sessionUser,
+        isGuest: false,
+        hasSeenOnboarding: true,
+      });
+    }
+
+    return { success: true };
+  },
+
+  resetPassword: async (email: string) => {
+    return await authService.resetPassword(email);
   },
 
   setProfile: async (name: string, gender: Gender) => {

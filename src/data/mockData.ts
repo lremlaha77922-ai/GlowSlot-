@@ -1,29 +1,104 @@
-import { QuickService, Salon, PromoBanner, SlotItem } from '../types';
+import { QuickService, Salon, PromoBanner, SlotItem, SpecialistItem } from '../types';
 import { generateTimeSlots, calculateSlotPrice } from '../utils/pricing';
 
-export const mockBanners: PromoBanner[] = [
+export const defaultSpecialists: SpecialistItem[] = [
   {
-    id: 'b1',
-    title: 'Off-Peak Grooming Specials',
-    subtitle: 'Save up to 40% on morning slots (8 AM - 11 AM)',
-    tag: 'Smart Pricing',
-    bgGradient: 'from-indigo-600 to-indigo-800',
+    id: 'spec-1',
+    name: 'Mahesh Kumar',
+    role: 'Senior Master Stylist',
+    rating: 4.9,
+    experienceYears: 8,
+    photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    earliestSlot: 'Today, 10:00 AM',
+    specialties: ['Fade Cut', 'Beard Sculpting', 'Hair Spa'],
   },
   {
-    id: 'b2',
-    title: 'Top Rated Neighborhood Salons',
-    subtitle: 'Certified professionals, clean chairs & zero wait',
-    tag: 'Verified',
-    bgGradient: 'from-purple-600 to-indigo-700',
+    id: 'spec-2',
+    name: 'Ananya Sharma',
+    role: 'Skin & Facial Expert',
+    rating: 4.8,
+    experienceYears: 6,
+    photoUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=300&q=80',
+    earliestSlot: 'Today, 11:30 AM',
+    specialties: ['Charcoal Facial', 'Detox Cleanup', 'Skin Glow'],
   },
   {
-    id: 'b3',
-    title: 'GlowSlot Referral Perks',
-    subtitle: 'Share your link and earn 200 points after first service',
-    tag: 'Rewards',
-    bgGradient: 'from-blue-600 to-teal-700',
+    id: 'spec-3',
+    name: 'Vikram Singh',
+    role: 'Beard & Barbering Specialist',
+    rating: 4.9,
+    experienceYears: 10,
+    photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+    earliestSlot: 'Today, 02:00 PM',
+    specialties: ['Royal Shave', 'Beard Lineup', 'Hot Towel Steam'],
+  },
+  {
+    id: 'spec-4',
+    name: 'Pooja Nair',
+    role: 'Hair Artist & Stylist',
+    rating: 4.7,
+    experienceYears: 5,
+    photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80',
+    earliestSlot: 'Today, 03:30 PM',
+    specialties: ['Layer Cut', 'Blowdry', 'Hair Coloring'],
   },
 ];
+
+export const festivalBanners: PromoBanner[] = [
+  {
+    id: 'fest-1',
+    title: 'Grand Festive Beauty Offers',
+    subtitle: 'Up to 50% OFF on premium salon styling & skin rituals',
+    tag: 'Festival Offer',
+    bgGradient: 'from-indigo-950/90 via-purple-950/75 to-stone-900/60',
+    imageUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'fest-2',
+    title: 'Festive Grooming Specials',
+    subtitle: 'Beard sculpting, hair restyle & royal facial for men',
+    tag: 'Festive Grooming',
+    bgGradient: 'from-stone-950/90 via-neutral-900/80 to-amber-950/60',
+    imageUrl: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'fest-3',
+    title: 'Bridal & Festive Makeover',
+    subtitle: 'HD airbrush makeup, luxury hair spa & glowing facial',
+    tag: 'Bridal Glow',
+    bgGradient: 'from-rose-950/90 via-purple-950/80 to-stone-900/60',
+    imageUrl: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1200&q=80',
+  },
+];
+
+export const discountBanners: PromoBanner[] = [
+  {
+    id: 'disc-1',
+    title: 'Up to 40% OFF',
+    subtitle: 'Morning grooming slots (8 AM - 11 AM) at top salons',
+    tag: 'Up to 40% OFF',
+    bgGradient: 'from-purple-950/90 via-indigo-950/80 to-stone-900/60',
+    imageUrl: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'disc-2',
+    title: 'Flat ₹200 OFF',
+    subtitle: 'Selected beauty services, hair spa & facial packages',
+    tag: 'Flat ₹200 OFF',
+    bgGradient: 'from-emerald-950/90 via-teal-950/80 to-stone-900/60',
+    imageUrl: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'disc-3',
+    title: 'Weekend Beauty Deals',
+    subtitle: 'Limited-time salon offers on Saturday & Sunday slots',
+    tag: 'Weekend Deals',
+    bgGradient: 'from-amber-950/90 via-orange-950/80 to-stone-900/60',
+    imageUrl: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=1200&q=80',
+  },
+];
+
+export const mockBanners: PromoBanner[] = festivalBanners;
 
 export const mockQuickServices: QuickService[] = [
   {
@@ -34,6 +109,7 @@ export const mockQuickServices: QuickService[] = [
     durationMin: 30,
     price: 24900, // Rs.249
     originalPrice: 35000,
+    imageUrl: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 'qs-2',
@@ -43,6 +119,7 @@ export const mockQuickServices: QuickService[] = [
     durationMin: 30,
     price: 19900, // Rs.199
     originalPrice: 25000,
+    imageUrl: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 'qs-3',
@@ -52,6 +129,7 @@ export const mockQuickServices: QuickService[] = [
     durationMin: 30,
     price: 19900, // Rs.199
     originalPrice: 28000,
+    imageUrl: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 'qs-4',
@@ -61,6 +139,27 @@ export const mockQuickServices: QuickService[] = [
     durationMin: 30,
     price: 14900, // Rs.149
     originalPrice: 22000,
+    imageUrl: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 'qs-5',
+    name: 'Hair Spa',
+    nameHi: 'हेयर स्पा',
+    category: 'Hair',
+    durationMin: 30,
+    price: 29900, // Rs.299
+    originalPrice: 42000,
+    imageUrl: 'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=400&q=80',
+  },
+  {
+    id: 'qs-6',
+    name: 'Manicure',
+    nameHi: 'मैनिक्योर',
+    category: 'Nails',
+    durationMin: 30,
+    price: 17900, // Rs.179
+    originalPrice: 25000,
+    imageUrl: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=400&q=80',
   },
 ];
 
@@ -84,12 +183,15 @@ export const mockSalons: Salon[] = [
     ],
     gender: 'unisex',
     categories: ['Haircut', 'Shave & Beard', 'Facial', 'Massage'],
+    isVerified: true,
+    availableSlotsToday: 8,
     isDeal: true,
     dealDiscountPercent: 25,
     dealEndsInMinutes: 45,
     aboutText:
       'Luxe Cut & Style Studio is a premier grooming parlour offering bespoke haircuts, beard styling, skin rejuvenation and express spa treatments. Enjoy zero wait times with guaranteed time slot holds.',
     amenities: ['Air Conditioned', 'Free Wi-Fi', 'Complimentary Beverages', 'Sanitized Tools', 'Card & UPI'],
+    specialists: defaultSpecialists,
     services: [
       {
         id: 'srv-101',
@@ -99,6 +201,8 @@ export const mockSalons: Salon[] = [
         durationMin: 30,
         basePrice: 24900,
         description: 'Consultation, hair wash, cut, scalp massage and light styling.',
+        isPopular: true,
+        imageUrl: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=400&q=80',
       },
       {
         id: 'srv-102',
@@ -108,6 +212,7 @@ export const mockSalons: Salon[] = [
         durationMin: 30,
         basePrice: 19900,
         description: 'Double lather shave with hot towel steam and aftershave balm.',
+        imageUrl: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=400&q=80',
       },
       {
         id: 'srv-103',
@@ -117,6 +222,8 @@ export const mockSalons: Salon[] = [
         durationMin: 45,
         basePrice: 49900,
         description: 'Exfoliation, steam, blackhead removal and refreshing clay mask.',
+        isPopular: true,
+        imageUrl: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=400&q=80',
       },
       {
         id: 'srv-104',
@@ -163,6 +270,10 @@ export const mockSalons: Salon[] = [
         date: 'Yesterday',
         tags: ['Great Service', 'Clean Environment', 'Punctual'],
         comment: 'Booked the 9 AM morning slot at a huge discount. The chair was waiting for me as soon as I walked in! Superb cut by Mahesh.',
+        images: [
+          'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=600&q=80',
+          'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=600&q=80',
+        ],
       },
       {
         id: 'rev-2',
@@ -171,6 +282,9 @@ export const mockSalons: Salon[] = [
         date: '3 days ago',
         tags: ['Hygienic', 'Value for Money'],
         comment: 'Very hygienic and professional setup. The scalp massage was immensely relaxing.',
+        images: [
+          'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=600&q=80',
+        ],
       },
     ],
   },
@@ -192,6 +306,8 @@ export const mockSalons: Salon[] = [
     ],
     gender: 'male',
     categories: ['Haircut', 'Shave & Beard', 'Facial'],
+    isVerified: true,
+    availableSlotsToday: 12,
     isDeal: true,
     dealDiscountPercent: 30,
     dealEndsInMinutes: 28,
@@ -256,6 +372,8 @@ export const mockSalons: Salon[] = [
     ],
     gender: 'male',
     categories: ['Haircut', 'Shave & Beard', 'Massage'],
+    isVerified: true,
+    availableSlotsToday: 6,
     isDeal: true,
     dealDiscountPercent: 20,
     dealEndsInMinutes: 75,
@@ -300,6 +418,8 @@ export const mockSalons: Salon[] = [
     ],
     gender: 'female',
     categories: ['Haircut', 'Facial', 'Massage'],
+    isVerified: true,
+    availableSlotsToday: 10,
     aboutText: 'Serene spa and hair boutique designed specifically for modern women seeking quick, high-end grooming.',
     amenities: ['Private Spa Rooms', 'Organic Products', 'Valet Parking', 'Free Wi-Fi'],
     services: [
@@ -331,6 +451,8 @@ export const mockSalons: Salon[] = [
     ],
     gender: 'unisex',
     categories: ['Haircut', 'Shave & Beard', 'Facial', 'Massage'],
+    isVerified: true,
+    availableSlotsToday: 15,
     aboutText: 'Complete family grooming and salon services with welcoming ambience and dedicated specialists.',
     amenities: ['Air Conditioned', 'Kids Friendly', 'Sanitized Station'],
     services: [
@@ -362,6 +484,8 @@ export const mockSalons: Salon[] = [
     ],
     gender: 'male',
     categories: ['Haircut', 'Shave & Beard'],
+    isVerified: true,
+    availableSlotsToday: 0,
     aboutText: 'Friendly neighborhood barbershop known for clean scissor work and budget-conscious pricing.',
     amenities: ['Air Conditioned', 'UPI Accepted'],
     services: [
@@ -393,6 +517,8 @@ export const mockSalons: Salon[] = [
     ],
     gender: 'unisex',
     categories: ['Haircut', 'Shave & Beard', 'Facial', 'Massage'],
+    isVerified: true,
+    availableSlotsToday: 14,
     aboutText: 'Luxury tech-lounge salon with bespoke aesthetic treatments and personal styling booths.',
     amenities: ['Private Styling Suites', 'Free Espresso', 'High Speed Wi-Fi', 'Complimentary Parking'],
     services: [
@@ -424,6 +550,8 @@ export const mockSalons: Salon[] = [
     ],
     gender: 'female',
     categories: ['Haircut', 'Facial', 'Massage'],
+    isVerified: true,
+    availableSlotsToday: 7,
     aboutText: 'Creative ladies hair design and facial care with certified organic serums.',
     amenities: ['Air Conditioned', 'Complimentary Tea', 'Sanitized Linens'],
     services: [

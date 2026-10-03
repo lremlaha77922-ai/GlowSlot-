@@ -17,11 +17,13 @@ import {
   LogOut,
   Trash2,
   Edit2,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface ProfileMainScreenProps {
   onBack: () => void;
   onEditProfile: () => void;
+  onBookingHistory?: () => void;
   onSavedAddresses: () => void;
   onFavouriteSalons: () => void;
   onWalletPoints: () => void;
@@ -30,11 +32,13 @@ interface ProfileMainScreenProps {
   onHelpSupport: () => void;
   onTermsPrivacy: () => void;
   onLoggedOut: () => void;
+  onAdminDashboard?: () => void;
 }
 
 export const ProfileMainScreen: React.FC<ProfileMainScreenProps> = ({
   onBack,
   onEditProfile,
+  onBookingHistory,
   onSavedAddresses,
   onFavouriteSalons,
   onWalletPoints,
@@ -43,6 +47,7 @@ export const ProfileMainScreen: React.FC<ProfileMainScreenProps> = ({
   onHelpSupport,
   onTermsPrivacy,
   onLoggedOut,
+  onAdminDashboard,
 }) => {
   const { user, isGuest, logout, deleteAccount } = useSessionStore();
   const { showToast } = useUIStore();
@@ -113,6 +118,19 @@ export const ProfileMainScreen: React.FC<ProfileMainScreenProps> = ({
             Account & Rewards
           </span>
 
+          {onBookingHistory && (
+            <div
+              onClick={onBookingHistory}
+              className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-primary-soft/30 transition-colors"
+            >
+              <div className="flex items-center gap-3 text-xs font-semibold">
+                <Calendar size={17} className="text-primary" />
+                <span>Booking History</span>
+              </div>
+              <ChevronRight size={16} className="text-muted" />
+            </div>
+          )}
+
           <div
             onClick={onSavedAddresses}
             className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-primary-soft/30 transition-colors"
@@ -161,7 +179,7 @@ export const ProfileMainScreen: React.FC<ProfileMainScreenProps> = ({
         {/* 2. Preferences Group */}
         <div className="bg-surface rounded-card border border-border shadow-level-1 overflow-hidden divide-y divide-border">
           <span className="text-[10px] font-bold text-muted uppercase tracking-wider px-4 pt-3 pb-1 block">
-            Preferences
+            Preferences & Controls
           </span>
 
           <div
@@ -174,6 +192,19 @@ export const ProfileMainScreen: React.FC<ProfileMainScreenProps> = ({
             </div>
             <ChevronRight size={16} className="text-muted" />
           </div>
+
+          {onAdminDashboard && (
+            <div
+              onClick={onAdminDashboard}
+              className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-primary-soft/30 transition-colors bg-primary/5"
+            >
+              <div className="flex items-center gap-3 text-xs font-semibold text-primary">
+                <ShieldCheck size={17} className="text-primary" />
+                <span>Admin Dashboard & Monitoring</span>
+              </div>
+              <ChevronRight size={16} className="text-primary" />
+            </div>
+          )}
         </div>
 
         {/* 3. Support & Legal Group */}

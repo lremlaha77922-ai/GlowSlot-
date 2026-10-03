@@ -32,7 +32,7 @@ export const LastMinuteDealsSection: React.FC<LastMinuteDealsSectionProps> = ({
           <div
             key={salon.id}
             onClick={() => onSelectSalon?.(salon.id)}
-            className="w-[260px] shrink-0 bg-surface rounded-card border border-border/80 shadow-level-1 overflow-hidden flex flex-col justify-between cursor-pointer hover:border-primary/50 hover:shadow-level-2 transition-all"
+            className="w-[260px] shrink-0 bg-surface rounded-card border border-border/80 shadow-level-1 overflow-hidden flex flex-col justify-between cursor-pointer hover:border-primary/50 hover:shadow-level-2 transition-all duration-300 group"
           >
             {/* Salon Image / Placeholder with Deal badge & Countdown */}
             <div className="relative w-full h-32 bg-muted/20 overflow-hidden">
@@ -40,7 +40,7 @@ export const LastMinuteDealsSection: React.FC<LastMinuteDealsSectionProps> = ({
                 src={salon.images[0]}
                 alt={salon.name}
                 loading="lazy"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}

@@ -1,11 +1,13 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useFavoritesStore } from '../../store/useFavoritesStore';
 import { useUIStore } from '../../store/useUIStore';
 import { useSessionStore } from '../../store/useSessionStore';
+import { supabase } from '../../lib/supabase';
 
 describe('Profile, Favorites & Settings (Phase 4C & 5B)', () => {
   beforeEach(() => {
     useFavoritesStore.getState().clearFavorites();
+    vi.restoreAllMocks();
   });
 
   it('toggles salon favorites correctly', () => {
@@ -38,8 +40,21 @@ describe('Profile, Favorites & Settings (Phase 4C & 5B)', () => {
   });
 
   it('clears session upon logout', async () => {
-    useSessionStore.getState().setPendingPhone('+91 98765 43210');
-    await useSessionStore.getState().verifyOtp('123456');
+    vi.spyOn(supabase.auth, 'signUp').mockResolvedValueOnce({
+      data: {
+        user: { id: '00000000-0000-0000-0000-000000000003', email: 'test@glowslot.com' } as any,
+        session: { access_token: 'fake-token' } as any,
+      },
+      error: null,
+    });
+
+    vi.spyOn(supabase, 'from').mockReturnValueOnce({
+      upsert: vi.fn().mockResolvedValue({ error: null }),
+    } as any);
+
+    await useSessionStore
+      .getState()
+      .signUpWithEmail('test@glowslot.com', 'password123', 'Test User', 'male');
     expect(useSessionStore.getState().user).not.toBeNull();
 
     await useSessionStore.getState().logout();

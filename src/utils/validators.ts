@@ -23,7 +23,7 @@ export const validatePincode = (pincode: string): boolean => {
 };
 
 export const validateEmail = (email: string): boolean => {
-  if (!email) return true; // optional
+  if (!email || !email.trim()) return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 };
 

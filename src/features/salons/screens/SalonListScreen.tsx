@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Salon, FilterOptions } from '../../../types';
 import { salonService } from '../services/salonService';
 import { FilterSheet } from '../components/FilterSheet';
+import { SalonCard } from '../../../components/SalonCard';
+import { InteractiveSalonMap } from '../../../components/InteractiveSalonMap';
 import { formatMoney } from '../../../utils/money';
 import { Chip } from '../../../components/Chip';
 import { Skeleton } from '../../../components/Skeleton';
@@ -18,21 +20,26 @@ import {
   X,
   History,
   Sparkles,
+  List,
+  Map,
 } from 'lucide-react';
 
 const CATEGORIES = ['All', 'Haircut', 'Shave & Beard', 'Facial', 'Massage'];
 
 interface SalonListScreenProps {
   onSelectSalon: (salonId: string) => void;
+  onBookNowModal?: (salon: Salon) => void;
 }
 
 export const SalonListScreen: React.FC<SalonListScreenProps> = ({
   onSelectSalon,
+  onBookNowModal,
 }) => {
   const [salons, setSalons] = useState<Salon[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [recentSearches, setRecentSearches] = useState<string[]>([
     'Haircut Koramangala',
     'Beard Trim',
@@ -140,9 +147,9 @@ export const SalonListScreen: React.FC<SalonListScreenProps> = ({
             </button>
           </div>
 
-          {/* Gender Segmented Control per Design.md 8.4 */}
+          {/* Gender Segmented Control & View Mode Toggle (List vs Map) */}
           <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="h-8 p-0.5 rounded-button bg-muted/15 border border-border flex items-center flex-1 max-w-[240px]">
+            <div className="h-8 p-0.5 rounded-button bg-muted/15 border border-border flex items-center flex-1 max-w-[200px]">
               {(['all', 'male', 'female'] as const).map((g) => {
                 const isActive = filters.gender === g;
                 return (
@@ -161,12 +168,28 @@ export const SalonListScreen: React.FC<SalonListScreenProps> = ({
               })}
             </div>
 
-            <span className="text-[11px] text-muted font-medium">
-              {salons.length} places
-            </span>
+            {/* View Mode Toggle: List vs Map */}
+            <div className="h-8 p-0.5 rounded-button bg-muted/15 border border-border flex items-center gap-1">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`h-full px-2.5 rounded-[8px] text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                  viewMode === 'list' ? 'bg-surface text-primary shadow-xs' : 'text-muted hover:text-text'
+                }`}
+              >
+                <List size={13} /> List
+              </button>
+              <button
+                onClick={() => setViewMode('map')}
+                className={`h-full px-2.5 rounded-[8px] text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                  viewMode === 'map' ? 'bg-surface text-primary shadow-xs' : 'text-muted hover:text-text'
+                }`}
+              >
+                <Map size={13} /> Map
+              </button>
+            </div>
           </div>
 
-          {/* Horizontal Category Chips per Design.md 8.4 */}
+          {/* Horizontal Category Chips */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             {CATEGORIES.map((cat) => (
               <Chip
@@ -208,7 +231,7 @@ export const SalonListScreen: React.FC<SalonListScreenProps> = ({
           </div>
         )}
 
-        {/* Salon Cards List */}
+        {/* Main Content: List vs Map View */}
         <main className="p-4 flex flex-col gap-3">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
@@ -216,22 +239,20 @@ export const SalonListScreen: React.FC<SalonListScreenProps> = ({
                 key={i}
                 className="bg-surface rounded-card border border-border p-3 flex gap-3 shadow-level-1"
               >
-                <Skeleton className="w-24 h-24" radius="button" />
-                <div className="flex-1 flex flex-col justify-between py-1">
-                  <div>
-                    <Skeleton className="w-3/5 h-4" />
-                    <Skeleton className="w-2/5 h-3 mt-2" />
-                  </div>
-                  <Skeleton className="w-1/2 h-3.5" />
+                <Skeleton className="w-32 h-32" radius="button" />
+                <div className="flex-1 flex flex-col gap-2 justify-center">
+                  <Skeleton className="w-3/4 h-4" />
+                  <Skeleton className="w-1/2 h-3" />
+                  <Skeleton className="w-1/4 h-4 mt-2" />
                 </div>
               </div>
             ))
           ) : salons.length === 0 ? (
             <EmptyState
               title="No salons found"
-              helperText="Try adjusting your filters, selecting a different category, or broadening your search."
+              description="Try adjusting your filters, location, or search term."
               actionLabel="Reset Filters"
-              onAction={() =>
+              onAction={() => {
                 setFilters({
                   gender: 'all',
                   category: 'All',
@@ -241,98 +262,55 @@ export const SalonListScreen: React.FC<SalonListScreenProps> = ({
                   openNowOnly: false,
                   rating4PlusOnly: false,
                   offersOnly: false,
-                })
-              }
+                });
+                setSearchQuery('');
+              }}
+            />
+          ) : viewMode === 'map' ? (
+            <InteractiveSalonMap
+              salons={salons}
+              onSelectSalon={onSelectSalon}
+              onBookNow={(s) => {
+                if (onBookNowModal) onBookNowModal(s);
+                else onSelectSalon(s.id);
+              }}
+              className="h-[500px]"
             />
           ) : (
-            salons.map((salon) => {
-              const isFav = isFavorite(salon.id);
-
-              return (
-                <div
-                  key={salon.id}
-                  onClick={() => onSelectSalon(salon.id)}
-                  className="bg-surface rounded-card border border-border/80 shadow-level-1 p-3 flex gap-3 relative cursor-pointer hover:border-primary/40 hover:shadow-level-2 transition-all"
-                >
-                  {/* 96x96 Image left per Design.md 8.4 */}
-                  <div className="w-24 h-24 rounded-button bg-muted/20 shrink-0 overflow-hidden relative">
-                    <img
-                      src={salon.images[0]}
-                      alt={salon.name}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                    {/* Open/Closed Tag */}
-                    <span
-                      className={`absolute bottom-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider ${
-                        salon.isOpen
-                          ? 'bg-success text-white'
-                          : 'bg-muted text-white'
-                      }`}
-                    >
-                      {salon.isOpen ? 'Open' : 'Closed'}
-                    </span>
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-between pr-7">
-                    <div>
-                      <h3 className="text-sm font-bold text-text truncate" title={salon.name}>
-                        {salon.name}
-                      </h3>
-                      <div className="flex items-center gap-1 text-xs text-muted mt-0.5">
-                        <MapPin size={11} className="shrink-0" />
-                        <span className="truncate">{salon.area}</span>
-                        <span>•</span>
-                        <span className="shrink-0">{salon.distanceKm} km</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 mt-1 text-xs">
-                      <div className="flex items-center gap-0.5 font-bold text-text">
-                        <Star size={12} className="fill-deal text-deal" />
-                        <span>{salon.rating}</span>
-                      </div>
-                      <span className="text-muted text-[11px]">
-                        ({salon.reviewCount} reviews)
-                      </span>
-                    </div>
-
-                    <div className="mt-1 flex items-baseline gap-1">
-                      <span className="text-[11px] text-muted">Services from</span>
-                      <span className="text-xs font-bold text-primary tabular-nums">
-                        {formatMoney(salon.startingPrice)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Heart icon top-right per Design.md 8.4 */}
-                  <button
-                    onClick={(e) => handleToggleFav(salon, e)}
-                    className="absolute top-3 right-3 p-1 rounded-full text-muted hover:text-accent transition-colors cursor-pointer"
-                    aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
-                  >
-                    <Heart
-                      size={18}
-                      className={isFav ? 'fill-accent text-accent' : 'text-muted'}
-                    />
-                  </button>
-                </div>
-              );
-            })
+            salons.map((salon) => (
+              <SalonCard
+                key={salon.id}
+                salon={salon}
+                badge={salon.badgeType}
+                variant="list"
+                onClick={() => onSelectSalon(salon.id)}
+                onViewProfile={() => onSelectSalon(salon.id)}
+                onBookNow={() => {
+                  if (onBookNowModal) {
+                    onBookNowModal(salon);
+                  } else {
+                    onSelectSalon(salon.id);
+                  }
+                }}
+                isFavorite={isFavorite(salon.id)}
+                onToggleFavorite={(e) => handleToggleFav(salon, e)}
+              />
+            ))
           )}
         </main>
 
-        {/* O02 Filter Sheet */}
-        <FilterSheet
-          isOpen={isFilterSheetOpen}
-          onClose={() => setIsFilterSheetOpen(false)}
-          filters={filters}
-          onApply={(updated) => setFilters(updated)}
-        />
+        {/* Filter Sheet Modal */}
+        {isFilterSheetOpen && (
+          <FilterSheet
+            isOpen={isFilterSheetOpen}
+            onClose={() => setIsFilterSheetOpen(false)}
+            filters={filters}
+            onApply={(newFilters) => {
+              setFilters(newFilters);
+              setIsFilterSheetOpen(false);
+            }}
+          />
+        )}
       </div>
     </PullToRefresh>
   );

@@ -15,13 +15,11 @@ interface WriteReviewModalProps {
 }
 
 const REVIEW_TAGS = [
-  'Clean & Sanitized',
-  'Punctual Stylist',
-  'Great Haircut',
-  'Relaxing Ambiance',
-  'Value for Money',
-  'Polite Staff',
-  'Zero Wait Time',
+  'Great Service',
+  'Professional Staff',
+  'Clean Salon',
+  'Good Value',
+  'Friendly Staff',
 ];
 
 export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
@@ -31,7 +29,7 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
   onReviewSubmitted,
 }) => {
   const [rating, setRating] = useState(5);
-  const [selectedTags, setSelectedTags] = useState<string[]>(['Punctual Stylist', 'Clean & Sanitized']);
+  const [selectedTags, setSelectedTags] = useState<string[]>(['Great Service', 'Professional Staff', 'Clean Salon']);
   const [comment, setComment] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useSessionStore();
@@ -45,6 +43,16 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (booking.status !== 'completed') {
+      showToast('Reviews are only permitted for completed appointments.');
+      return;
+    }
+
+    if (booking.review) {
+      showToast('You have already submitted a review for this booking.');
+      return;
+    }
+
     if (!comment.trim()) {
       showToast('Please add a few words to your review.');
       return;
@@ -74,13 +82,13 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
   };
 
   return (
-    <Sheet isOpen={isOpen} onClose={onClose} title="Write a Review (S12)">
+    <Sheet isOpen={isOpen} onClose={onClose} title="Rate Your Experience">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 pb-4">
         <div className="text-center py-2">
           <span className="text-xs text-muted block mb-1">Rate your experience with</span>
           <h3 className="text-sm font-bold text-text">{booking.salonName}</h3>
 
-          {/* Star selector */}
+          {/* Star selector (1-5 stars) */}
           <div className="flex items-center justify-center gap-2 mt-3">
             {[1, 2, 3, 4, 5].map((s) => (
               <button
@@ -106,7 +114,7 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
         {/* Tags Selector */}
         <div>
           <label className="text-xs font-bold text-text uppercase tracking-wider block mb-2">
-            What went well?
+            What went well? (Optional Tags)
           </label>
           <div className="flex flex-wrap gap-2">
             {REVIEW_TAGS.map((tag) => {
@@ -132,7 +140,7 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
         {/* Comment textarea */}
         <div>
           <label className="text-xs font-bold text-text uppercase tracking-wider block mb-1.5">
-            Your Detailed Feedback
+            Your Comment / Feedback
           </label>
           <textarea
             value={comment}
@@ -144,8 +152,8 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
           />
         </div>
 
-        <Button type="submit" variant="primary" size="lg" fullWidth disabled={isLoading} className="mt-2">
-          {isLoading ? 'Submitting...' : 'Submit Review'}
+        <Button type="submit" variant="primary" size="lg" fullWidth disabled={isLoading} className="mt-2 font-extrabold">
+          {isLoading ? 'Submitting Review...' : 'Submit Review'}
         </Button>
       </form>
     </Sheet>

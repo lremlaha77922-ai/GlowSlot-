@@ -59,13 +59,17 @@ describe('Validation Utilities (P6A)', () => {
   });
 
   describe('validateEmail', () => {
-    it('accepts valid email and empty optional email', () => {
-      expect(validateEmail('')).toBe(true);
-      expect(validateEmail('test@glowslot.com')).toBe(true);
-      expect(validateEmail('rahul.k@gmail.com')).toBe(true);
+    it('accepts all valid email formats regardless of domain or TLD', () => {
+      expect(validateEmail('devuser01@glowslot.test')).toBe(true);
+      expect(validateEmail('test@example.com')).toBe(true);
+      expect(validateEmail('user@gmail.com')).toBe(true);
+      expect(validateEmail('user@example.in')).toBe(true);
+      expect(validateEmail('user@example.co.in')).toBe(true);
+      expect(validateEmail('user@example.org')).toBe(true);
     });
 
-    it('rejects invalid email formats', () => {
+    it('rejects syntactically invalid email formats', () => {
+      expect(validateEmail('')).toBe(false);
       expect(validateEmail('notanemail')).toBe(false);
       expect(validateEmail('test@')).toBe(false);
       expect(validateEmail('@domain.com')).toBe(false);

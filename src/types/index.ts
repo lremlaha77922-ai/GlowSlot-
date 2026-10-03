@@ -19,6 +19,19 @@ export interface SalonServiceItem {
   durationMin: number;
   basePrice: number; // in paise
   description?: string;
+  isPopular?: boolean;
+  imageUrl?: string;
+}
+
+export interface SpecialistItem {
+  id: string;
+  name: string;
+  role: string;
+  rating: number;
+  experienceYears: number;
+  photoUrl: string;
+  earliestSlot: string;
+  specialties?: string[];
 }
 
 export interface PackageItem {
@@ -37,6 +50,8 @@ export interface ReviewItem {
   date: string;
   tags: string[];
   comment: string;
+  images?: string[];
+  userAvatar?: string;
 }
 
 export interface Salon {
@@ -54,6 +69,11 @@ export interface Salon {
   images: string[];
   gender: Gender;
   categories: string[];
+  isVerified?: boolean;
+  isTopRated?: boolean;
+  isTrending?: boolean;
+  availableSlotsToday?: number;
+  badgeType?: 'VERIFIED' | 'TOP RATED' | 'TRENDING' | 'FOR YOU';
   isDeal?: boolean;
   dealDiscountPercent?: number;
   dealEndsInMinutes?: number;
@@ -62,6 +82,7 @@ export interface Salon {
   services?: SalonServiceItem[];
   packages?: PackageItem[];
   reviews?: ReviewItem[];
+  specialists?: SpecialistItem[];
 }
 
 export interface PromoBanner {
@@ -116,7 +137,7 @@ export interface CartItem {
 export interface UserSession {
   id: string;
   name: string;
-  phone: string;
+  phone?: string;
   gender?: Gender;
   points: number;
   isNewUser?: boolean;
@@ -161,7 +182,7 @@ export interface Coupon {
 
 export type PaymentMethod = 'upi' | 'card' | 'netbanking' | 'pay_at_salon';
 
-export type BookingStatus = 'upcoming' | 'completed' | 'cancelled';
+export type BookingStatus = 'upcoming' | 'pending' | 'completed' | 'cancelled';
 
 export interface BookingCancellation {
   reason: string;
@@ -199,11 +220,14 @@ export interface Booking {
   couponDiscountPaise: number;
   pointsDiscountPaise: number;
   totalPaise: number;
+  advancePaise?: number;
+  balancePaise?: number;
   paymentMethod: PaymentMethod;
   paymentStatus: 'paid' | 'pay_later';
   status: BookingStatus;
   createdAt: string;
   rescheduleCount: number;
+  specialInstructions?: string;
   cancellation?: BookingCancellation;
   review?: BookingReview;
 }
@@ -238,7 +262,12 @@ export interface NotificationItem {
 export interface PointsTransaction {
   id: string;
   title: string;
+  description: string;
+  rewardType: 'qr_payment' | 'booking' | 'referral' | 'redemption' | 'signup_bonus';
+  salonName?: string;
   date: string;
-  points: number; // positive = earned, negative = spent
-  type: 'booking_reward' | 'redemption' | 'referral' | 'signup_bonus';
+  qrBillPaise?: number;
+  points: number; // positive = earned, negative = redeemed
+  status: 'completed' | 'pending' | 'expired';
+  type: 'booking_reward' | 'redemption' | 'referral' | 'signup_bonus' | 'qr_payment';
 }

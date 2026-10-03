@@ -118,6 +118,8 @@ export const bookingService = {
             couponDiscountPaise: Number(b.coupon_discount_paise) || 0,
             pointsDiscountPaise: Number(b.points_discount_paise) || 0,
             totalPaise: Number(b.total_paise),
+            advancePaise: b.advance_paise ? Number(b.advance_paise) : undefined,
+            balancePaise: b.balance_paise ? Number(b.balance_paise) : undefined,
             paymentMethod: b.payment_method as PaymentMethod,
             paymentStatus: b.payment_status,
             status: b.status,
@@ -146,6 +148,353 @@ export const bookingService = {
     return list.find((b) => b.id === id) || null;
   },
 
+  async validateMultiServiceBooking(salonId: string, serviceIds: string[]): Promise<{
+    isValid: boolean;
+    totalPricePaise: number;
+    totalDurationMin: number;
+    error?: string;
+  }> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data, error } = await supabase.rpc('validate_and_calculate_multi_service_booking', {
+          p_salon_id: salonId,
+          p_service_ids: serviceIds,
+        });
+
+        if (!error && data) {
+          const res = Array.isArray(data) ? data[0] : data;
+          if (res) {
+            return {
+              isValid: res.is_valid,
+              totalPricePaise: Number(res.total_price_paise) || 0,
+              totalDurationMin: Number(res.total_duration_min) || 30,
+              error: res.error_message,
+            };
+          }
+        }
+      } catch {}
+    }
+
+    return {
+      isValid: true,
+      totalPricePaise: 29800,
+      totalDurationMin: 60,
+    };
+  },
+
+  async validateBookingSummary(params: {
+    userId: string;
+    salonId: string;
+    serviceIds: string[];
+    specialistId?: string | null;
+    slotId: string;
+    couponCode?: string | null;
+    pointsToRedeem?: number;
+  }): Promise<{
+    isValid: boolean;
+    subtotalPaise: number;
+    platformFeePaise: number;
+    taxPaise: number;
+    couponDiscountPaise: number;
+    pointsDiscountPaise: number;
+    totalAmountPaise: number;
+    advanceAmountPaise: number;
+    balanceAmountPaise: number;
+    totalDurationMin: number;
+    error?: string;
+  }> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data, error } = await supabase.rpc('validate_booking_summary', {
+          p_user_id: params.userId,
+          p_salon_id: params.salonId,
+          p_service_ids: params.serviceIds,
+          p_specialist_id: params.specialistId || null,
+          p_slot_id: params.slotId,
+          p_coupon_code: params.couponCode || '',
+          p_points_to_redeem: params.pointsToRedeem || 0,
+        });
+
+        if (!error && data) {
+          const res = Array.isArray(data) ? data[0] : data;
+          if (res) {
+            return {
+              isValid: res.is_valid,
+              subtotalPaise: Number(res.subtotal_paise) || 0,
+              platformFeePaise: Number(res.platform_fee_paise) || 0,
+              taxPaise: Number(res.tax_paise) || 0,
+              couponDiscountPaise: Number(res.coupon_discount_paise) || 0,
+              pointsDiscountPaise: Number(res.points_discount_paise) || 0,
+              totalAmountPaise: Number(res.total_amount_paise) || 0,
+              advanceAmountPaise: Number(res.advance_amount_paise) || 0,
+              balanceAmountPaise: Number(res.balance_amount_paise) || 0,
+              totalDurationMin: Number(res.total_duration_min) || 30,
+              error: res.error_message,
+            };
+          }
+        }
+      } catch {}
+    }
+
+    const mockSubtotal = 29800;
+    const mockPlatformFee = 1000;
+    const mockTax = Math.round((mockSubtotal + mockPlatformFee) * 0.18);
+    const mockTotal = mockSubtotal + mockPlatformFee + mockTax;
+
+    return {
+      isValid: true,
+      subtotalPaise: mockSubtotal,
+      platformFeePaise: mockPlatformFee,
+      taxPaise: mockTax,
+      couponDiscountPaise: 0,
+      pointsDiscountPaise: 0,
+      totalAmountPaise: mockTotal,
+      advanceAmountPaise: Math.round(mockTotal * 0.10),
+      balanceAmountPaise: mockTotal - Math.round(mockTotal * 0.10),
+      totalDurationMin: 60,
+    };
+  },
+
+  async initiateSecureBookingPayment(params: {
+    userId: string;
+    slotId: string;
+    salonId: string;
+    serviceIds: string[];
+    idempotencyKey?: string;
+  }): Promise<{
+    paymentId?: string;
+    totalAmountPaise: number;
+    advanceAmountPaise: number;
+    heldUntil?: string;
+    error?: string;
+  }> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data, error } = await supabase.rpc('initiate_secure_booking_payment', {
+          p_user_id: params.userId,
+          p_slot_id: params.slotId,
+          p_salon_id: params.salonId,
+          p_service_ids: params.serviceIds,
+          p_idempotency_key: params.idempotencyKey || `pay-${Date.now()}`,
+        });
+
+        if (!error && data) {
+          const res = Array.isArray(data) ? data[0] : data;
+          if (res) {
+            if (res.error_message) {
+              return { totalAmountPaise: 0, advanceAmountPaise: 0, error: res.error_message };
+            }
+            return {
+              paymentId: res.payment_id,
+              totalAmountPaise: Number(res.total_amount_paise) || 0,
+              advanceAmountPaise: Number(res.advance_amount_paise) || 0,
+              heldUntil: res.held_until,
+            };
+          }
+        }
+      } catch (err: any) {
+        return { totalAmountPaise: 0, advanceAmountPaise: 0, error: err?.message };
+      }
+    }
+
+    // Fallback Mock flow
+    const mockTotal = 29800;
+    return {
+      paymentId: `pay-${Math.random().toString(36).substr(2, 9)}`,
+      totalAmountPaise: mockTotal,
+      advanceAmountPaise: Math.round(mockTotal * 0.25),
+      heldUntil: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    };
+  },
+
+  async confirmSecureBookingPayment(paymentId: string, reference: string): Promise<{
+    success: boolean;
+    bookingNumber?: string;
+    error?: string;
+  }> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data, error } = await supabase.rpc('confirm_secure_booking_payment', {
+          p_payment_id: paymentId,
+          p_payment_reference: reference,
+        });
+
+        if (!error && data) {
+          const res = Array.isArray(data) ? data[0] : data;
+          if (res) {
+            if (res.error_message) {
+              return { success: false, error: res.error_message };
+            }
+            return {
+              success: res.success,
+              bookingNumber: res.booking_number,
+            };
+          }
+        }
+      } catch (err: any) {
+        return { success: false, error: err?.message };
+      }
+    }
+
+    return {
+      success: true,
+      bookingNumber: `GS-2026-${Math.floor(10000 + Math.random() * 90000)}`,
+    };
+  },
+
+  async releaseSecureBookingPaymentFailure(paymentId: string): Promise<boolean> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data } = await supabase.rpc('release_secure_booking_payment_failure', {
+          p_payment_id: paymentId,
+        });
+        return !!data;
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  },
+
+  async getBookingConfirmationDetails(bookingId: string): Promise<{
+    bookingId: string;
+    bookingNumber: string;
+    bookingStatus: string;
+    paymentStatus: string;
+    salonName: string;
+    salonAddress: string;
+    scheduledDate: string;
+    scheduledTime: string;
+    customerName: string;
+    customerPhone: string;
+    customerEmail: string;
+    totalAmountPaise: number;
+    advancePaidPaise: number;
+    balanceDuePaise: number;
+    specialInstructions?: string;
+    specialistName: string;
+    services: { name: string; price: number; qty: number }[];
+    error?: string;
+  }> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data, error } = await supabase.rpc('get_booking_confirmation_details', {
+          p_booking_id: bookingId,
+        });
+
+        if (!error && data) {
+          const res = Array.isArray(data) ? data[0] : data;
+          if (res) {
+            return {
+              bookingId: res.booking_id,
+              bookingNumber: res.booking_number,
+              bookingStatus: res.booking_status,
+              paymentStatus: res.payment_status,
+              salonName: res.salon_name,
+              salonAddress: res.salon_address,
+              scheduledDate: res.scheduled_date,
+              scheduledTime: res.scheduled_time ? res.scheduled_time.slice(0, 5) : '10:00',
+              customerName: res.customer_name,
+              customerPhone: res.customer_phone,
+              customerEmail: res.customer_email,
+              totalAmountPaise: Number(res.total_amount_paise) || 0,
+              advancePaidPaise: Number(res.advance_paid_paise) || 0,
+              balanceDuePaise: Number(res.balance_due_paise) || 0,
+              specialInstructions: res.special_instructions,
+              specialistName: res.specialist_name,
+              services: Array.isArray(res.services_json) ? res.services_json.map((s: any) => ({
+                name: s.name,
+                price: Number(s.price) || 0,
+                qty: Number(s.qty) || 1,
+              })) : [],
+            };
+          }
+        }
+      } catch (err: any) {
+        return {
+          bookingId,
+          bookingNumber: '',
+          bookingStatus: '',
+          paymentStatus: '',
+          salonName: '',
+          salonAddress: '',
+          scheduledDate: '',
+          scheduledTime: '',
+          customerName: '',
+          customerPhone: '',
+          customerEmail: '',
+          totalAmountPaise: 0,
+          advancePaidPaise: 0,
+          balanceDuePaise: 0,
+          specialistName: '',
+          services: [],
+          error: err?.message,
+        };
+      }
+    }
+
+    // Mock flow fallback
+    return {
+      bookingId,
+      bookingNumber: `GS-2026-${Math.floor(10000 + Math.random() * 90000)}`,
+      bookingStatus: 'upcoming',
+      paymentStatus: 'paid',
+      salonName: 'Luxe Cut & Style Studio',
+      salonAddress: 'Koramangala, Bengaluru',
+      scheduledDate: '2026-10-05',
+      scheduledTime: '11:00',
+      customerName: 'Aarav Sharma',
+      customerPhone: '+91 98765 43210',
+      customerEmail: 'aarav@glowslot.com',
+      totalAmountPaise: 29800,
+      advancePaidPaise: 7450,
+      balanceDuePaise: 22350,
+      specialistName: 'Preeti Nair (Pro Stylist)',
+      services: [{ name: 'Precision Haircut', price: 19900, qty: 1 }],
+    };
+  },
+
+  async getSalonDirections(salonId: string): Promise<{
+    salonId: string;
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    googleMapsUrl: string;
+  }> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data, error } = await supabase.rpc('get_salon_directions', {
+          p_salon_id: salonId,
+        });
+
+        if (!error && data) {
+          const res = Array.isArray(data) ? data[0] : data;
+          if (res) {
+            return {
+              salonId: res.salon_id,
+              name: res.name,
+              address: res.address,
+              latitude: Number(res.latitude) || 12.9352,
+              longitude: Number(res.longitude) || 77.6244,
+              googleMapsUrl: res.google_maps_url,
+            };
+          }
+        }
+      } catch {}
+    }
+
+    // Default mock directions for Koramangala, Bengaluru
+    return {
+      salonId,
+      name: 'Luxe Cut & Style Studio',
+      address: 'Koramangala, Bengaluru',
+      latitude: 12.9352,
+      longitude: 77.6244,
+      googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=12.9352,77.6244`,
+    };
+  },
+
   async createBooking(params: {
     userId: string;
     slotId: string;
@@ -162,11 +511,12 @@ export const bookingService = {
     pointsDiscountPaise: number;
     totalPaise: number;
     paymentMethod: PaymentMethod;
+    specialInstructions?: string;
     idempotencyKey?: string;
   }): Promise<{ success: boolean; booking?: Booking; error?: string }> {
     if (params.userId && isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
       try {
-        const { data, error } = await supabase.rpc('create_booking', {
+        const { data, error } = await supabase.rpc('create_booking_v2', {
           p_user_id: params.userId,
           p_slot_id: params.slotId,
           p_salon_id: params.salonId,
@@ -174,6 +524,7 @@ export const bookingService = {
           p_coupon_discount_paise: params.couponDiscountPaise,
           p_points_discount_paise: params.pointsDiscountPaise,
           p_payment_method: params.paymentMethod,
+          p_special_instructions: params.specialInstructions || '',
           p_idempotency_key: params.idempotencyKey || `idemp-${Date.now()}`,
         });
 

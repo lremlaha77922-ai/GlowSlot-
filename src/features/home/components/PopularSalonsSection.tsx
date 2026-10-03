@@ -43,7 +43,7 @@ export const PopularSalonsSection: React.FC<PopularSalonsSectionProps> = ({
             <div
               key={salon.id}
               onClick={() => onSelectSalon?.(salon.id)}
-              className="bg-surface rounded-card border border-border/80 shadow-level-1 p-3 flex gap-3 relative cursor-pointer hover:border-primary/40 hover:shadow-level-2 transition-all"
+              className="bg-surface rounded-card border border-border/80 shadow-level-1 p-3 flex gap-3 relative cursor-pointer hover:border-primary/40 hover:shadow-level-2 transition-all duration-300 group"
             >
               {/* 96x96 Image left per Design.md 8.4 */}
               <div className="w-24 h-24 rounded-button bg-muted/20 shrink-0 overflow-hidden relative">
@@ -51,7 +51,7 @@ export const PopularSalonsSection: React.FC<PopularSalonsSectionProps> = ({
                   src={salon.images[0]}
                   alt={salon.name}
                   loading="lazy"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   onError={(e) => {
                     (e.target as HTMLElement).style.display = 'none';
                   }}

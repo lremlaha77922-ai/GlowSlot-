@@ -6,3 +6,10 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Keystore & Android Release Files
+*.jks
+*.keystore
+*.p12
+android/app/release/
+android/app/build/

@@ -1,7 +1,7 @@
 # 08_TRACKER.md: GlowSlot Progress Tracker
 
 Update after every task. Status values: `TODO`, `DOING`, `DONE`, `BLOCKED`.
-Last updated: 2026-10-02  |  Current phase: **Phase 6A (DONE)**  |  Prompts: `12_PHASE_PROMPTS.md`
+Last updated: 2026-10-02  |  Current phase: **Phase 6B (DONE)**  |  Prompts: `12_PHASE_PROMPTS.md`
 
 ---
 
@@ -23,7 +23,7 @@ Last updated: 2026-10-02  |  Current phase: **Phase 6A (DONE)**  |  Prompts: `12
 | 5D | Slots, bookings, realtime | DONE | 2026-10-02 | 2026-10-02 |
 | 5E | Cleanup and verification | DONE | 2026-10-02 | 2026-10-02 |
 | 6A | Tests and performance | DONE | 2026-10-02 | 2026-10-02 |
-| 6B | Android build | TODO | | |
+| 6B | Android build | DONE | 2026-10-02 | 2026-10-02 |
 
 ---
 
@@ -154,6 +154,15 @@ Last updated: 2026-10-02  |  Current phase: **Phase 6A (DONE)**  |  Prompts: `12
 | 6A.3 | Code splitting & bundle size | DONE | Split vendor chunks, Home JS gzip is ~64.4 KB (budget 250 KB) |
 | 6A.4 | Engineering Practices Audit | DONE | All 8 checklist items passed |
 
+### Phase 6B
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| 6B.1 | Capacitor core & plugins | DONE | Installed @capacitor/core, android, geolocation, share, app |
+| 6B.2 | capacitor.config.json | DONE | appId: com.glowslot.app, appName: GlowSlot |
+| 6B.3 | Hardware back button & safe area | DONE | CapacitorApp backButton listener, viewport-fit=cover |
+| 6B.4 | Location rationale & Native share | DONE | LocationSheet rationale banner, ReferEarn native share |
+| 6B.5 | README & Keystore security | DONE | Android build guide, keystore ignored in .gitignore |
+
 ---
 
 ## 3. Decisions Log
@@ -177,6 +186,8 @@ Last updated: 2026-10-02  |  Current phase: **Phase 6A (DONE)**  |  Prompts: `12
 | 2026-10-02 | Phase 5D Slots, Bookings, Realtime | Supabase RPCs, hold_slot, Realtime subscriptions, server bill totals |
 | 2026-10-02 | Phase 5E Cleanup & Verification | Mock path isolation, zero Firebase audit, 45 automated tests pass |
 | 2026-10-02 | Phase 6A Tests & Performance | 59 automated tests across 12 suites pass, 64.4 KB gzipped main JS |
+| 2026-10-02 | Phase 6B Android (Capacitor) Complete | Capacitor core, android, geolocation, share, app id com.glowslot.app |
+| 2026-10-02 | Auth Migration (Email + Password) | Replaced phone OTP with Email + Password registration & login |
 
 ---
 
@@ -206,6 +217,7 @@ Last updated: 2026-10-02  |  Current phase: **Phase 6A (DONE)**  |  Prompts: `12
 | 2026-10-02 | Phase 5D | Booking engine & Realtime audit | PASS | All 31 unit tests pass, clean build with zero errors |
 | 2026-10-02 | Phase 5E | Phase 5 checklist test suite | PASS | 45 tests across 9 test files pass, zero errors |
 | 2026-10-02 | Phase 6A | Full Test & Performance Suite | PASS | 59 tests across 12 suites pass, 64.4 KB gzipped main JS |
+| 2026-10-02 | Phase 6B | Android Capacitor Build Audit | PASS | 59 tests pass, clean build, zero errors |
 
 ---
 

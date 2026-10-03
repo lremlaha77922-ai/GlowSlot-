@@ -29,8 +29,8 @@ GlowSlot is an original Android salon booking app for India. Users book at-salon
 
 | Item | Value |
 |---|---|
-| Phase | 6A (Tests & Performance) - DONE |
-| Last completed task | 6A.4 Hardening, 59 automated tests across 12 suites, bundle optimization |
-| Next task | Phase 6B: Android build (awaiting prompt P6B) |
+| Phase | Auth Migration (Email + Password) - DONE |
+| Last completed task | Migrated authentication from Mobile OTP to Email + Password (signUp, signInWithPassword, resetPassword, profile sync) |
+| Next task | Maintenance / Feature updates |
 | Known blockers | None |
 | Known bugs | None |

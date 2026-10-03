@@ -3,16 +3,18 @@ import { HomeHeader } from '../components/HomeHeader';
 import { PromoCarousel } from '../components/PromoCarousel';
 import { QuickServicesSection } from '../components/QuickServicesSection';
 import { LastMinuteDealsSection } from '../components/LastMinuteDealsSection';
+import { SalonDiscoverySections } from '../components/SalonDiscoverySections';
 import { PopularSalonsSection } from '../components/PopularSalonsSection';
 import { ReferralCard } from '../components/ReferralCard';
 import { PullToRefresh } from '../../../components/PullToRefresh';
 import { useUIStore } from '../../../store/useUIStore';
-import { mockBanners, mockQuickServices, mockSalons } from '../../../data/mockData';
+import { festivalBanners, discountBanners, mockQuickServices, mockSalons } from '../../../data/mockData';
 
 interface HomeScreenProps {
   onOpenLocation: () => void;
   onOpenCart: () => void;
   onSelectSalon: (salonId: string) => void;
+  onBookNowModal?: (salon: Salon) => void;
   onOpenNotifications?: () => void;
   onOpenProfile?: () => void;
   onOpenPoints?: () => void;
@@ -23,6 +25,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenLocation,
   onOpenCart,
   onSelectSalon,
+  onBookNowModal,
   onOpenNotifications = () => {},
   onOpenProfile = () => {},
   onOpenPoints = () => {},
@@ -50,16 +53,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           onOpenPoints={onOpenPoints}
         />
 
-        {/* Promotional Banners Carousel */}
-        <PromoCarousel banners={mockBanners} />
+        {/* SECTION 1 — Festival Offers Carousel */}
+        <PromoCarousel sectionTitle="Festival Offers" banners={festivalBanners} />
 
         {/* Quick Services Section */}
         <QuickServicesSection services={mockQuickServices} />
+
+        {/* SECTION 2 — Special Discounts Carousel */}
+        <PromoCarousel sectionTitle="Special Discounts" banners={discountBanners} />
 
         {/* Dynamic Deals & Off-Peak Slots Section */}
         <LastMinuteDealsSection
           deals={mockSalons.filter((s) => s.isDeal)}
           onSelectSalon={onSelectSalon}
+        />
+
+        {/* 4 Upgraded Salon Discovery Sections */}
+        <SalonDiscoverySections
+          salons={mockSalons}
+          onSelectSalon={onSelectSalon}
+          onBookNow={onBookNowModal}
         />
 
         {/* Popular Neighborhood Salons List */}
