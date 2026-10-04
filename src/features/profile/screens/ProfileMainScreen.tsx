@@ -18,6 +18,7 @@ import {
   Trash2,
   Edit2,
   ShieldCheck,
+  Calendar,
 } from 'lucide-react';
 
 interface ProfileMainScreenProps {

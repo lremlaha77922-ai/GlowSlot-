@@ -23,6 +23,7 @@ import { WalletPointsScreen } from '../features/profile/screens/WalletPointsScre
 import { QRPaymentScreen } from '../features/profile/screens/QRPaymentScreen';
 import { ReferEarnScreen } from '../features/profile/screens/ReferEarnScreen';
 import { SettingsScreen } from '../features/profile/screens/SettingsScreen';
+import { InviteLandingScreen } from '../features/auth/screens/InviteLandingScreen';
 import { HelpSupportScreen } from '../features/profile/screens/HelpSupportScreen';
 import { TermsPrivacyScreen } from '../features/profile/screens/TermsPrivacyScreen';
 import { AdminDashboard } from '../components/admin/AdminDashboard';
@@ -64,7 +65,8 @@ type ViewMode =
   | 'settings'
   | 'helpSupport'
   | 'termsPrivacy'
-  | 'adminDashboard';
+  | 'adminDashboard'
+  | 'invite';
 
 export const AppShell: React.FC = () => {
   const {
@@ -151,6 +153,19 @@ export const AppShell: React.FC = () => {
     salon: Salon;
     service: { id: string; name: string; durationMin: number; basePrice: number };
   } | null>(null);
+
+  useEffect(() => {
+    // Check initial route
+    const path = window.location.pathname;
+    if (path === '/invite') {
+      if (user) {
+        showToast('You are already signed in.');
+        setCurrentView('tabs');
+      } else {
+        setCurrentView('invite');
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
     const sub = authService.onAuthStateChange((sessionUser) => {
@@ -364,6 +379,16 @@ export const AppShell: React.FC = () => {
           <LoginScreen
             onSuccess={() => handlePostAuthNavigate()}
             onContinueAsGuest={() => setCurrentView('tabs')}
+          />
+        )}
+
+        {currentView === 'invite' && (
+          <InviteLandingScreen
+            onJoin={(code) => {
+              // Navigate to signup with referral
+              window.location.href = `/signup?ref=${code}`;
+            }}
+            onSignIn={() => setCurrentView('login')}
           />
         )}
 

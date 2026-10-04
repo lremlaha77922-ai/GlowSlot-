@@ -22,6 +22,7 @@ import {
   Building2,
   Tag,
   Share2,
+  RefreshCw,
 } from 'lucide-react';
 
 interface WalletPointsScreenProps {
@@ -40,40 +41,50 @@ export const WalletPointsScreen: React.FC<WalletPointsScreenProps> = ({
   const { user } = useSessionStore();
   const { showToast } = useUIStore();
   const [transactions, setTransactions] = useState<PointsTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [activeFilter, setActiveFilter] = useState<
     'all' | 'qr_payments' | 'bookings' | 'referrals' | 'redeemed' | 'expired' | 'pending'
   >('all');
   const [copiedCode, setCopiedCode] = useState(false);
 
-  const balance = user?.points ?? 250;
+  const balance = user?.points ?? 0;
   const rupeeValuePaise = balance * 100;
   const referralCode = user?.referralCode || 'GLOWAARAV2026';
 
   useEffect(() => {
     const load = async () => {
-      const data = await userService.getWalletTransactions(user?.id);
-      setTransactions(data);
+      setLoading(true);
+      setError(false);
+      try {
+        const data = await userService.getWalletTransactions(user?.id);
+        setTransactions(data);
+      } catch (e) {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
     };
     load();
-  }, [user]);
+  }, [user?.id]);
 
-  // Calculate Stats
+  // Calculate Stats using real data
   const lifetimeEarned = transactions
     .filter((t) => t.points > 0)
-    .reduce((sum, t) => sum + t.points, 450);
+    .reduce((sum, t) => sum + t.points, 0);
   const lifetimeRedeemed = Math.abs(
     transactions
       .filter((t) => t.points < 0)
-      .reduce((sum, t) => sum + t.points, -120)
+      .reduce((sum, t) => sum + t.points, 0)
   );
 
   const totalQRRewards = transactions
     .filter((t) => t.rewardType === 'qr_payment' && t.status === 'completed')
-    .reduce((sum, t) => sum + t.points, 235);
+    .reduce((sum, t) => sum + t.points, 0);
 
   const referralEarnings = transactions
     .filter((t) => t.rewardType === 'referral')
-    .reduce((sum, t) => sum + t.points, 100);
+    .reduce((sum, t) => sum + t.points, 0);
 
   const handleCopyCode = () => {
     navigator.clipboard?.writeText(referralCode);
@@ -132,65 +143,93 @@ export const WalletPointsScreen: React.FC<WalletPointsScreenProps> = ({
           </button>
           <h1 className="text-sm font-bold text-text">Glow Rewards & Wallet</h1>
         </div>
+        <button
+          onClick={async () => {
+            setLoading(true);
+            setError(false);
+            try {
+              const data = await userService.getWalletTransactions(user?.id);
+              setTransactions(data);
+              showToast('Rewards updated!');
+            } catch (e) {
+              setError(true);
+            } finally {
+              setLoading(false);
+            }
+          }}
+          className="p-1.5 rounded-full text-muted hover:text-primary hover:bg-primary-soft transition-colors cursor-pointer"
+          aria-label="Refresh"
+        >
+          <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+        </button>
       </header>
 
       <main className="p-4 max-w-lg mx-auto flex flex-col gap-4">
         {/* CURRENT POINTS (AVAILABLE BALANCE) HERO CARD */}
-        <div className="rounded-card bg-gradient-to-br from-primary via-primary to-accent p-5 text-white shadow-level-2 relative overflow-hidden flex flex-col gap-4">
-          <div className="relative z-10 flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-white/85 uppercase tracking-wider mb-1">
-                <Sparkles size={14} className="text-white" />
-                <span>Available Balance</span>
+        {loading ? (
+          <div className="rounded-card bg-surface p-5 shadow-xs animate-pulse h-32" />
+        ) : error ? (
+          <div className="rounded-card bg-surface p-5 shadow-xs border border-error/20 text-center">
+            <AlertCircle className="mx-auto text-error mb-2" />
+            <p className="text-sm font-bold text-text">Unable to load your rewards right now.</p>
+          </div>
+        ) : (
+          <div className="rounded-card bg-gradient-to-br from-primary via-primary to-accent p-5 text-white shadow-level-2 relative overflow-hidden flex flex-col gap-4">
+            <div className="relative z-10 flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-white/85 uppercase tracking-wider mb-1">
+                  <Sparkles size={14} className="text-white" />
+                  <span>Available Balance</span>
+                </div>
+                <div className="flex items-baseline gap-2 my-1">
+                  <span className="text-3xl font-extrabold font-mono tracking-tight tabular-nums">
+                    {balance}
+                  </span>
+                  <span className="text-xs text-white/80 font-semibold">Glow Points</span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-chip bg-white/20 backdrop-blur-xs text-xs font-medium mt-1">
+                  <span>Worth {formatMoney(rupeeValuePaise)} in bill deductions</span>
+                </div>
               </div>
-              <div className="flex items-baseline gap-2 my-1">
-                <span className="text-3xl font-extrabold font-mono tracking-tight tabular-nums">
-                  {balance}
+
+              <div className="text-right">
+                <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-chip text-white uppercase tracking-wider">
+                  Wallet Active
                 </span>
-                <span className="text-xs text-white/80 font-semibold">Glow Points</span>
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-chip bg-white/20 backdrop-blur-xs text-xs font-medium mt-1">
-                <span>Worth {formatMoney(rupeeValuePaise)} in bill deductions</span>
               </div>
             </div>
 
-            <div className="text-right">
-              <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-chip text-white uppercase tracking-wider">
-                Wallet Active
-              </span>
+            {/* Quick Action Buttons */}
+            <div className="grid grid-cols-3 gap-2 relative z-10 pt-2 border-t border-white/20">
+              <button
+                onClick={onRedeemQR}
+                className="py-2 px-1 rounded-button bg-white text-primary text-[11px] font-bold hover:bg-white/90 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 shadow-xs"
+              >
+                <QrCode size={16} />
+                <span className="truncate w-full text-center">Redeem QR</span>
+              </button>
+              <button
+                onClick={onPayQR}
+                className="py-2 px-1 rounded-button bg-white/20 text-white text-[11px] font-bold hover:bg-white/30 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 border border-white/30"
+              >
+                <TrendingUp size={16} />
+                <span className="truncate w-full text-center">Pay & Earn</span>
+              </button>
+              <button
+                onClick={onReferClick}
+                className="py-2 px-1 rounded-button bg-white/20 text-white text-[11px] font-bold hover:bg-white/30 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 border border-white/30"
+              >
+                <Gift size={16} />
+                <span className="truncate w-full text-center">Refer Code</span>
+              </button>
             </div>
-          </div>
 
-          {/* Quick Action Buttons */}
-          <div className="grid grid-cols-3 gap-2 relative z-10 pt-2 border-t border-white/20">
-            <button
-              onClick={onRedeemQR}
-              className="py-2 px-1 rounded-button bg-white text-primary text-[11px] font-bold hover:bg-white/90 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 shadow-xs"
-            >
-              <QrCode size={16} />
-              <span className="truncate w-full text-center">Redeem QR</span>
-            </button>
-            <button
-              onClick={onPayQR}
-              className="py-2 px-1 rounded-button bg-white/20 text-white text-[11px] font-bold hover:bg-white/30 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 border border-white/30"
-            >
-              <TrendingUp size={16} />
-              <span className="truncate w-full text-center">Pay & Earn</span>
-            </button>
-            <button
-              onClick={onReferClick}
-              className="py-2 px-1 rounded-button bg-white/20 text-white text-[11px] font-bold hover:bg-white/30 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 border border-white/30"
-            >
-              <Gift size={16} />
-              <span className="truncate w-full text-center">Refer Code</span>
-            </button>
+            <Sparkles
+              size={140}
+              className="absolute -right-8 -bottom-8 text-white/10 pointer-events-none"
+            />
           </div>
-
-          <Sparkles
-            size={140}
-            className="absolute -right-8 -bottom-8 text-white/10 pointer-events-none"
-          />
-        </div>
+        )}
 
         {/* Stats Section: Lifetime Earned & Redeemed */}
         <div className="grid grid-cols-2 gap-3">
@@ -270,16 +309,26 @@ export const WalletPointsScreen: React.FC<WalletPointsScreenProps> = ({
                 {copiedCode ? <Check size={14} className="text-success" /> : <Copy size={14} />}
                 <span>{copiedCode ? 'Copied' : 'Copy'}</span>
               </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={onReferClick}
-                className="text-xs font-bold"
-              >
-                View Referrals
-              </Button>
             </div>
           </div>
+        </div>
+
+        {/* Earn More Points Section */}
+        <div className="bg-surface rounded-card border border-border p-4 shadow-xs flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <h4 className="text-xs font-bold text-text">Earn More Points</h4>
+            <p className="text-[11px] text-muted leading-tight">
+              Invite friends to GlowSlot and earn referral rewards.
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onReferClick}
+            className="text-xs font-bold shrink-0"
+          >
+            Refer & Earn
+          </Button>
         </div>
 
         {/* Reward History Section */}

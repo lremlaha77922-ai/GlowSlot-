@@ -22,7 +22,8 @@ export const authService = {
     email: string,
     password: string,
     name: string,
-    gender: Gender
+    gender: Gender,
+    referralCode?: string
   ): Promise<{ success: boolean; session?: UserSession; message?: string; error?: string }> {
     console.log('[GLOWSLOT AUTH] SIGNUP CALLED', Date.now());
     const cleanEmail = email.trim().toLowerCase();
@@ -96,18 +97,32 @@ export const authService = {
         console.log('[AUTH SIGNUP SUCCESS]', data.user.id, data.user.email);
 
         const userId = data.user.id;
-        const referralCode = `GLOW-${name.toUpperCase().replace(/\s+/g, '').slice(0, 4)}100`;
+        const refCode = `GLOW-${name.toUpperCase().replace(/\s+/g, '').slice(0, 4)}100`;
 
         // Create or update profile row in public.profiles table using auth.users.id
         const profileRes = await this.updateProfile(userId, {
           full_name: name,
           gender,
           email: cleanEmail,
-          referral_code: referralCode,
+          referral_code: refCode,
           points: 100,
         });
 
         console.log('[AUTH] Profile creation result:', profileRes);
+
+        // Apply referral if exists
+        if (referralCode && referralCode.trim()) {
+          try {
+            const { error: refError } = await supabase.rpc('apply_referral', { p_referral_code: referralCode.trim() });
+            if (refError) {
+              console.error('[AUTH] Referral application failed:', refError.message);
+            } else {
+              console.log('[AUTH] Referral applied successfully!');
+            }
+          } catch (err) {
+            console.error('[AUTH] Referral application exception:', err);
+          }
+        }
 
         // If email confirmation is enabled on Supabase project, session is null until confirmed
         if (!data.session) {

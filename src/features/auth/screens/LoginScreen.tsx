@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../../components/Button';
 import { useSessionStore } from '../../../store/useSessionStore';
-import { Scissors, ArrowRight, Mail, Lock, User, KeyRound, AlertCircle, CheckCircle } from 'lucide-react';
+import { Scissors, ArrowRight, Mail, Lock, User, KeyRound, AlertCircle, CheckCircle, Gift } from 'lucide-react';
 import { useUIStore } from '../../../store/useUIStore';
 import { Gender } from '../../../types';
 import { validateEmail } from '../../../utils/validators';
+import { supabase } from '../../../lib/supabase';
 
 interface LoginScreenProps {
   onSuccess: () => void;
@@ -25,6 +26,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState<Gender>('male');
+  const [referralCode, setReferralCode] = useState('');
 
   // Status states
   const [error, setError] = useState('');
@@ -33,6 +35,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   const { loginWithEmail, signUpWithEmail, resetPassword, continueAsGuest } = useSessionStore();
   const { showToast } = useUIStore();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('ref') || params.get('referral');
+    if (code) {
+      setReferralCode(code.toUpperCase());
+    }
+  }, []);
 
   const resetFormState = () => {
     setError('');
@@ -73,7 +83,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     resetFormState();
 
     if (!fullName.trim()) {
-      setError('Please enter your full name.');
+      setError('Please enter a full name.');
       return;
     }
 
@@ -93,7 +103,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
 
     setIsLoading(true);
-    const res = await signUpWithEmail(email.trim(), password, fullName.trim(), gender);
+    const res = await signUpWithEmail(email.trim(), password, fullName.trim(), gender, referralCode.trim());
     setIsLoading(false);
 
     if (!res.success) {
@@ -351,6 +361,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   className="h-[48px] w-full pl-10 pr-4 rounded-input border border-border bg-surface text-text font-medium text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-text uppercase tracking-wider block mb-1">
+                Referral Code (Optional)
+              </label>
+              <div className="relative flex items-center">
+                <Gift size={18} className="absolute left-3.5 text-muted pointer-events-none" />
+                <input
+                  type="text"
+                  value={referralCode}
+                  onChange={(e) => {
+                    setReferralCode(e.target.value.toUpperCase());
+                    setError('');
+                  }}
+                  placeholder="Enter referral code"
+                  className="h-[48px] w-full pl-10 pr-4 rounded-input border border-border bg-surface text-text font-medium text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+                />
+              </div>
+              <p className="text-[10px] text-muted mt-1">Don't have a referral code? You can continue without one.</p>
             </div>
 
             <div>

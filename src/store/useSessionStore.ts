@@ -16,7 +16,8 @@ interface SessionState {
     email: string,
     password: string,
     name: string,
-    gender: Gender
+    gender: Gender,
+    referralCode?: string
   ) => Promise<{ success: boolean; message?: string; error?: string }>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   setProfile: (name: string, gender: Gender) => Promise<void>;
@@ -126,8 +127,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     return { success: true };
   },
 
-  signUpWithEmail: async (email: string, password: string, name: string, gender: Gender) => {
-    const res = await authService.signUpWithEmail(email, password, name, gender);
+  signUpWithEmail: async (email: string, password: string, name: string, gender: Gender, referralCode?: string) => {
+    const res = await authService.signUpWithEmail(email, password, name, gender, referralCode);
     if (!res.success) {
       return { success: false, error: res.error || 'Registration failed' };
     }
