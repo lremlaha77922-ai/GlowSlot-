@@ -33,16 +33,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { loginWithEmail, signUpWithEmail, resetPassword, continueAsGuest } = useSessionStore();
+  const { loginWithEmail, signUpWithEmail, resetPassword, continueAsGuest, setReferralCode: setStoreReferralCode, getReferralCode } = useSessionStore();
   const { showToast } = useUIStore();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('ref') || params.get('referral');
+    const storedCode = getReferralCode();
+    
     if (code) {
       setReferralCode(code.toUpperCase());
+      setStoreReferralCode(code.toUpperCase());
+    } else if (storedCode) {
+      setReferralCode(storedCode.toUpperCase());
     }
-  }, []);
+  }, [getReferralCode, setStoreReferralCode]);
 
   const resetFormState = () => {
     setError('');
@@ -118,6 +123,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
 
     showToast(`Welcome to GlowSlot, ${fullName.trim()}!`);
+    setStoreReferralCode(null);
     onSuccess();
   };
 

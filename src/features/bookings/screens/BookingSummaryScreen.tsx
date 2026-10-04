@@ -7,6 +7,7 @@ import { useSessionStore } from '../../../store/useSessionStore';
 import { slotService } from '../../slots/services/slotService';
 import { paymentService } from '../services/paymentService';
 import { bookingService } from '../../bookings/services/bookingService';
+import { NexoraPaymentScreen } from './NexoraPaymentScreen';
 import {
   ArrowLeft,
   Building2,
@@ -23,11 +24,8 @@ import {
   ShieldCheck,
   Lock,
   Edit2,
-  X,
   AlertCircle,
-  CreditCard,
   QrCode,
-  Store,
   CheckCircle2,
   Loader2,
 } from 'lucide-react';
@@ -102,6 +100,7 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
   // Payment Method State
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('upi');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showPaymentQR, setShowPaymentQR] = useState(false);
   const [simulateFailure, setSimulateFailure] = useState(false);
 
   const totalDurationMin = services.reduce((sum, s) => sum + s.durationMin, 0);
@@ -122,45 +121,54 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
 
   // COMPLETE PAYMENT & SLOT-LOCK FLOW
   const handlePayAndLockSlot = async () => {
-    // 1. Validation Before Payment
+    console.log('[GlowSlot] Continue to QR Payment clicked');
+    
+    // 1. Validation
     if (!slot || !slot.id || !slot.date || !slot.time) {
-      showToast('Selected time slot is invalid. Please select a valid slot.');
+      console.error('[GlowSlot] Payment transition blocked: Missing slot', slot);
+      showToast('Selected time slot is invalid.');
       return;
     }
     if (!services || services.length === 0) {
-      showToast('No services selected. Please add at least 1 service.');
-      return;
-    }
-    if (!customerDetails.name || customerDetails.name.trim().length < 2) {
-      showToast('Please provide a valid full name for the appointment contact.');
-      return;
-    }
-    if (!customerDetails.phone || customerDetails.phone.replace(/\D/g, '').length < 10) {
-      showToast('Please provide a valid 10-digit contact number.');
+      console.error('[GlowSlot] Payment transition blocked: No services', services);
+      showToast('No services selected.');
       return;
     }
 
     setIsProcessingPayment(true);
 
     try {
-      // 2. Lock the slot using the existing RPC / slot hold system before payment
+      // 2. Lock the slot
+      console.log('[GlowSlot] Attempting to hold slot:', slot.id);
       const holdRes = await slotService.holdSlot(slot.id, user?.id);
+      
       if (!holdRes.success) {
-        showToast(
-          holdRes.error ||
-            'This slot is no longer available or currently held by another user. Please pick another time slot.'
-        );
+        console.error('[GlowSlot] Slot lock failed:', holdRes.error);
+        showToast(holdRes.error || 'This slot is no longer available.');
         setIsProcessingPayment(false);
         return;
       }
 
-      showToast('Slot lock acquired! Processing 25% advance deposit...');
+      // 3. Success: Update state to show QR Payment view
+      console.log('[GlowSlot] Slot lock successful, showing QR payment');
+      setShowPaymentQR(true);
+      setIsProcessingPayment(false);
+    } catch (error) {
+      console.error('[GlowSlot] Continue to QR Payment failed:', error);
+      showToast('An unexpected error occurred while holding the slot.');
+      setIsProcessingPayment(false);
+    }
+  };
 
-      // 3. Process Payment for 25% Advance Deposit
+  // 4. Confirmation handler
+  const handleConfirmPayment = async () => {
+    setIsProcessingPayment(true);
+    try {
+      // Process Payment
       const payRes = await paymentService.processPayment(
         {
           amountPaise: deposit25Paise,
-          method: selectedPaymentMethod,
+          method: 'upi',
           bookingDetails: {
             salonName: salon.name,
             date: slot.date,
@@ -170,18 +178,15 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
         simulateFailure
       );
 
-      // 4. Handle Payment Failure: Release temporary slot lock & keep booking recoverable
       if (!payRes.success) {
-        // Release slot lock
         await slotService.releaseSlot(slot.id, user?.id);
-        showToast(
-          payRes.errorMessage || 'Payment failed. Slot lock has been released. Please try again.'
-        );
+        showToast(payRes.errorMessage || 'Payment failed.');
+        setShowPaymentQR(false); // Return to summary
         setIsProcessingPayment(false);
         return;
       }
 
-      // 5. Payment Successful: Create confirmed booking & store deposit status
+      // Create booking
       const bookingRes = await bookingService.createBooking({
         userId: user?.id || 'guest',
         slotId: slot.id,
@@ -204,18 +209,17 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
         couponDiscountPaise: pricingSummary.discount,
         pointsDiscountPaise: 0,
         totalPaise: grandTotalPaise,
-        paymentMethod: selectedPaymentMethod,
+        paymentMethod: 'upi',
       });
 
       if (!bookingRes.success || !bookingRes.booking) {
-        // Release slot if booking DB creation fails
         await slotService.releaseSlot(slot.id, user?.id);
-        showToast(bookingRes.error || 'Failed to confirm booking after payment.');
+        showToast('Failed to confirm booking after payment.');
+        setShowPaymentQR(false); // Return to summary
         setIsProcessingPayment(false);
         return;
       }
 
-      // 6. Confirmed Booking Created
       showToast(`Booking confirmed! Reference: ${bookingRes.booking.id}`);
       setIsProcessingPayment(false);
 
@@ -237,10 +241,11 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
         },
         bookingId: bookingRes.booking.id,
       });
-    } catch {
-      // Safety rollback on exception
+    } catch (error) {
+      console.error('Booking confirmation error:', error);
       await slotService.releaseSlot(slot.id, user?.id);
-      showToast('An unexpected payment error occurred. Temporary slot lock released.');
+      showToast('An unexpected payment error occurred.');
+      setShowPaymentQR(false); // Return to summary
       setIsProcessingPayment(false);
     }
   };
@@ -518,34 +523,18 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
             )}
           </div>
 
-          {/* Payment Method Selector */}
-          <div className="grid grid-cols-2 gap-2">
-            {(
-              [
-                { id: 'upi', name: 'UPI / GPay / PhonePe', icon: QrCode },
-                { id: 'card', name: 'Credit / Debit Card', icon: CreditCard },
-                { id: 'netbanking', name: 'Net Banking', icon: Building2 },
-                { id: 'pay_at_salon', name: 'Pay at Salon', icon: Store },
-              ] as const
-            ).map((pm) => {
-              const Icon = pm.icon;
-              const isSelected = selectedPaymentMethod === pm.id;
-              return (
-                <button
-                  key={pm.id}
-                  type="button"
-                  onClick={() => setSelectedPaymentMethod(pm.id)}
-                  className={`p-2.5 rounded-card border text-left flex items-center gap-2 cursor-pointer transition-all ${
-                    isSelected
-                      ? 'border-primary bg-primary-soft/40 ring-1 ring-primary'
-                      : 'border-border bg-surface hover:border-primary/40'
-                  }`}
-                >
-                  <Icon size={16} className={isSelected ? 'text-primary' : 'text-muted'} />
-                  <span className="text-[11px] font-bold text-text truncate">{pm.name}</span>
-                </button>
-              );
-            })}
+          {/* Payment Method Selector - NOW ONLY NEXORA QR */}
+          <div className="p-4 rounded-card border border-primary bg-primary-soft/40 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <QrCode className="text-primary" size={24} />
+              <div>
+                <h4 className="text-sm font-bold text-text">Nexora QR Payment</h4>
+                <p className="text-[11px] text-muted">Scan & Pay using any UPI app</p>
+              </div>
+            </div>
+            <div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center">
+              <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
+            </div>
           </div>
 
           {/* Test Payment Simulator Switcher */}
@@ -622,7 +611,7 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
           ) : (
             <>
               <Lock size={16} />
-              <span>Pay {formatMoney(deposit25Paise)} & Lock Slot</span>
+              <span>Continue to QR Payment</span>
             </>
           )}
         </Button>

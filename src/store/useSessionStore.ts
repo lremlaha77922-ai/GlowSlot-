@@ -22,6 +22,8 @@ interface SessionState {
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   setProfile: (name: string, gender: Gender) => Promise<void>;
   updatePoints: (points: number) => void;
+  setReferralCode: (code: string | null) => void;
+  getReferralCode: () => string | null;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<boolean>;
 }
@@ -29,6 +31,7 @@ interface SessionState {
 const STORAGE_KEY_USER = 'glowslot_session_user';
 const STORAGE_KEY_ONBOARDING = 'glowslot_onboarding_seen';
 const STORAGE_KEY_GUEST = 'glowslot_is_guest';
+const STORAGE_KEY_REFERRAL = 'glowslot_referral_code';
 
 const safeStorage = {
   getItem: (key: string): string | null => {
@@ -54,6 +57,34 @@ const safeStorage = {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem(key);
+      }
+    } catch {
+      // Ignore
+    }
+  },
+  getSessionItem: (key: string): string | null => {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        return window.sessionStorage.getItem(key);
+      }
+    } catch {
+      // Ignore
+    }
+    return null;
+  },
+  setSessionItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.sessionStorage.setItem(key, value);
+      }
+    } catch {
+      // Ignore
+    }
+  },
+  removeSessionItem: (key: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.sessionStorage.removeItem(key);
       }
     } catch {
       // Ignore
@@ -183,6 +214,18 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     const updated = { ...currentUser, points };
     safeStorage.setItem(STORAGE_KEY_USER, JSON.stringify(updated));
     set({ user: updated });
+  },
+
+  setReferralCode: (code: string | null) => {
+    if (code) {
+      safeStorage.setSessionItem(STORAGE_KEY_REFERRAL, code);
+    } else {
+      safeStorage.removeSessionItem(STORAGE_KEY_REFERRAL);
+    }
+  },
+
+  getReferralCode: () => {
+    return safeStorage.getSessionItem(STORAGE_KEY_REFERRAL);
   },
 
   logout: async () => {

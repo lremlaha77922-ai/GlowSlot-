@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Gift, ArrowRight, UserCircle } from 'lucide-react';
+import { Gift, ArrowRight } from 'lucide-react';
 import { Button } from '../../../components/Button';
+import { useSessionStore } from '../../../store/useSessionStore';
 
 interface InviteLandingScreenProps {
   onJoin: (referralCode: string) => void;
@@ -9,6 +10,7 @@ interface InviteLandingScreenProps {
 
 export const InviteLandingScreen: React.FC<InviteLandingScreenProps> = ({ onJoin, onSignIn }) => {
   const [referralCode, setReferralCode] = useState<string>('');
+  const { setReferralCode: setStoreReferralCode } = useSessionStore();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -17,6 +19,11 @@ export const InviteLandingScreen: React.FC<InviteLandingScreenProps> = ({ onJoin
       setReferralCode(code.trim().toUpperCase());
     }
   }, []);
+
+  const handleJoin = () => {
+    setStoreReferralCode(referralCode);
+    onJoin(referralCode);
+  };
 
   return (
     <div className="min-h-screen bg-bg text-text flex flex-col justify-center items-center p-6 max-w-lg mx-auto text-center">
@@ -45,7 +52,7 @@ export const InviteLandingScreen: React.FC<InviteLandingScreenProps> = ({ onJoin
           variant="primary" 
           size="lg" 
           fullWidth 
-          onClick={() => onJoin(referralCode)}
+          onClick={handleJoin}
           className="font-extrabold"
         >
           <span>Join GlowSlot</span>

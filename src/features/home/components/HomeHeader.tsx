@@ -30,7 +30,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-border/80 px-4 pt-3 pb-3">
-      {/* Top utility row: Points Chip, Theme, Lang, Bell, Cart */}
+      {/* Top utility row: Points Chip, Theme, Lang, Bell */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5">
           {/* Points Chip -> S26 */}

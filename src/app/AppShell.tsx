@@ -613,10 +613,11 @@ export const AppShell: React.FC = () => {
                 />
               )}
 
-              {activeTab === 'search' && (
-                <SalonListScreen
+              {activeTab === 'favouriteSalons' && (
+                <FavouriteSalonsScreen
+                  onBack={() => setActiveTab('home')}
                   onSelectSalon={handleOpenSalon}
-                  onBookNowModal={handleOpenBookModal}
+                  onExploreSalons={() => setActiveTab('home')}
                 />
               )}
 

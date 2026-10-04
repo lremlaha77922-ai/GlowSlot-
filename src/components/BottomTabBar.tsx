@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Search, Calendar, Gift, User } from 'lucide-react';
+import { Home, Calendar, Gift, Heart, User } from 'lucide-react';
 import { useUIStore } from '../store/useUIStore';
 
 export interface TabItem {
@@ -11,9 +11,9 @@ export interface TabItem {
 
 const TABS: TabItem[] = [
   { id: 'home', label: 'Home', icon: Home, isCurrentPhase: true },
-  { id: 'search', label: 'Search', icon: Search, isCurrentPhase: true },
-  { id: 'bookings', label: 'Bookings', icon: Calendar, isCurrentPhase: true },
+  { id: 'bookings', label: 'Appointments', icon: Calendar, isCurrentPhase: true },
   { id: 'rewards', label: 'Rewards', icon: Gift, isCurrentPhase: true },
+  { id: 'favouriteSalons', label: 'Favorites', icon: Heart, isCurrentPhase: true },
   { id: 'profile', label: 'Profile', icon: User, isCurrentPhase: true },
 ];
 
