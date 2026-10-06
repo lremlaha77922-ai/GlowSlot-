@@ -24,6 +24,7 @@ import {
   Share2,
   RefreshCw,
 } from 'lucide-react';
+import { LoyaltyPointsTracker } from '../components/LoyaltyPointsTracker';
 
 interface WalletPointsScreenProps {
   onBack: () => void;
@@ -230,6 +231,13 @@ export const WalletPointsScreen: React.FC<WalletPointsScreenProps> = ({
             />
           </div>
         )}
+
+        {/* Loyalty Points Tracker & Progress Bar to Next Discount Tier */}
+        <LoyaltyPointsTracker
+          customPoints={balance}
+          onPayQR={onPayQR}
+          onReferClick={onReferClick}
+        />
 
         {/* Stats Section: Lifetime Earned & Redeemed */}
         <div className="grid grid-cols-2 gap-3">

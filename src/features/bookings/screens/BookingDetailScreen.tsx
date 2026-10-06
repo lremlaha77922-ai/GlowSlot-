@@ -407,7 +407,7 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
               <Button
                 variant="outline"
                 size="md"
-                onClick={() => setIsCancelSheetOpen(true)}
+                onClick={() => setIsPolicyModalOpen(true)}
                 className="border-error text-error hover:bg-error/10 text-xs font-bold"
               >
                 <XCircle size={15} className="mr-1.5" />

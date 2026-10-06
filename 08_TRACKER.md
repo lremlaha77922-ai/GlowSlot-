@@ -164,7 +164,12 @@ Last updated: 2026-10-02  |  Current phase: **Phase 6B (DONE)**  |  Prompts: `12
 | 6B.5 | README & Keystore security | DONE | Android build guide, keystore ignored in .gitignore |
 | 6B.6 | Referrals Table | DONE | Created referrals table and RLS policies |
 | 6B.7 | useReferral hook | DONE | Implemented hook for referral code management |
-| 6C.1 | CancellationPolicyModal | DONE | New informational component with refund estimates |
+
+### Phase 6C
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| 6C.1 | CancellationPolicyModal | DONE | Modal with dynamic booking data, 80%/0% rules, Keep Booking & Cancel & Refund action buttons |
+| 6C.2 | LoyaltyPointsTracker | DONE | Component displaying user salon points balance & visual progress bar to next discount tier |
 
 ---
 

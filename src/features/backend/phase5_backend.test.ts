@@ -81,43 +81,52 @@ describe('Phase 5 Backend, RPC & RLS Verification Suite (09_Phases.md checklist)
       rescheduleCount: 0,
     });
 
-    it('grants 100% refund when cancelled >4 hours in advance', () => {
-      // 24 hours in future
-      const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    it('grants 80% refund of advance when cancelled >24 hours in advance', () => {
+      // 48 hours in future
+      const futureDate = new Date(Date.now() + 48 * 60 * 60 * 1000);
       const dateStr = futureDate.toISOString().split('T')[0];
       const timeStr = futureDate.toTimeString().slice(0, 5);
 
-      const booking = createTestBooking(dateStr, timeStr, 30000);
+      const booking = {
+        ...createTestBooking(dateStr, timeStr, 40000),
+        advancePaise: 10000,
+      };
       const refund = bookingService.calculateRefund(booking);
 
-      expect(refund.refundPercent).toBe(100);
-      expect(refund.refundAmountPaise).toBe(30000);
+      expect(refund.refundPercent).toBe(80);
+      expect(refund.refundAmountPaise).toBe(8000);
     });
 
-    it('grants 50% refund when cancelled 1-4 hours in advance', () => {
-      // 2.5 hours in future
-      const futureDate = new Date(Date.now() + 2.5 * 60 * 60 * 1000);
+    it('grants 0% refund when cancelled within 24 hours in advance', () => {
+      // 12 hours in future
+      const futureDate = new Date(Date.now() + 12 * 60 * 60 * 1000);
       const dateStr = futureDate.toISOString().split('T')[0];
       const timeStr = futureDate.toTimeString().slice(0, 5);
 
-      const booking = createTestBooking(dateStr, timeStr, 20000);
-      const refund = bookingService.calculateRefund(booking);
-
-      expect(refund.refundPercent).toBe(50);
-      expect(refund.refundAmountPaise).toBe(10000);
-    });
-
-    it('grants 0% refund when cancelled <1 hour in advance', () => {
-      // 30 minutes in future
-      const futureDate = new Date(Date.now() + 30 * 60 * 1000);
-      const dateStr = futureDate.toISOString().split('T')[0];
-      const timeStr = futureDate.toTimeString().slice(0, 5);
-
-      const booking = createTestBooking(dateStr, timeStr, 20000);
+      const booking = {
+        ...createTestBooking(dateStr, timeStr, 20000),
+        advancePaise: 5000,
+      };
       const refund = bookingService.calculateRefund(booking);
 
       expect(refund.refundPercent).toBe(0);
       expect(refund.refundAmountPaise).toBe(0);
+    });
+
+    it('grants 0% refund for same-day cancellations', () => {
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0];
+      const timeStr = '23:59';
+
+      const booking = {
+        ...createTestBooking(dateStr, timeStr, 20000),
+        advancePaise: 5000,
+      };
+      const refund = bookingService.calculateRefund(booking);
+
+      expect(refund.refundPercent).toBe(0);
+      expect(refund.refundAmountPaise).toBe(0);
+      expect(refund.isSameDay).toBe(true);
     });
   });
 

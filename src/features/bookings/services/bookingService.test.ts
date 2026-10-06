@@ -19,6 +19,7 @@ describe('Booking Service Cancellation & Refund Rules (PRD.md section 5)', () =>
     couponDiscountPaise: 0,
     pointsDiscountPaise: 0,
     totalPaise: 30382,
+    advancePaise: 7596,
     paymentMethod: 'upi',
     paymentStatus: 'paid',
     status: 'upcoming',
@@ -26,11 +27,25 @@ describe('Booking Service Cancellation & Refund Rules (PRD.md section 5)', () =>
     rescheduleCount: 0,
   };
 
-  it('provides 100% refund when cancelled >4 hours before slot', () => {
+  it('provides 80% refund of advance when cancelled >24 hours before slot', () => {
     // 5 days in advance
     const refund = bookingService.calculateRefund(baseBooking);
-    expect(refund.refundPercent).toBe(100);
-    expect(refund.refundAmountPaise).toBe(30382);
+    expect(refund.refundPercent).toBe(80);
+    expect(refund.refundAmountPaise).toBe(Math.round(7596 * 0.8));
+  });
+
+  it('provides 0% refund when cancelled within 24 hours of slot', () => {
+    const tomorrow = new Date(Date.now() + 12 * 60 * 60 * 1000);
+    const shortNoticeBooking: Booking = {
+      ...baseBooking,
+      slot: {
+        date: tomorrow.toISOString().split('T')[0],
+        time: tomorrow.toTimeString().slice(0, 5),
+      },
+    };
+    const refund = bookingService.calculateRefund(shortNoticeBooking);
+    expect(refund.refundPercent).toBe(0);
+    expect(refund.refundAmountPaise).toBe(0);
   });
 
   it('allows rescheduling when >2 hours before slot and rescheduleCount is 0', () => {

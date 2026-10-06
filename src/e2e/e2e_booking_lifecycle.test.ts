@@ -104,7 +104,7 @@ describe('E2E Integration Test: User Lifecycle & Booking Journey (P6A)', () => {
     expect(updated?.slot.time).toBe('14:00');
     expect(updated?.rescheduleCount).toBe(1);
 
-    // Step 6: Cancel booking and verify 100% refund (>4h window)
+    // Step 6: Cancel booking and verify 80% refund (>24h window)
     const cancelRes = await bookingService.cancelBooking(
       bookingId,
       'Change of plans',
@@ -112,11 +112,11 @@ describe('E2E Integration Test: User Lifecycle & Booking Journey (P6A)', () => {
     );
 
     expect(cancelRes.success).toBe(true);
-    expect(cancelRes.refundPercent).toBe(100);
-    expect(cancelRes.refundAmountPaise).toBe(13582);
+    expect(cancelRes.refundPercent).toBe(80);
 
     const cancelledBooking = await bookingService.getBookingById(bookingId, userId);
     expect(cancelledBooking?.status).toBe('cancelled');
     expect(cancelledBooking?.cancellation?.reason).toBe('Change of plans');
+    expect(cancelledBooking?.cancellation?.refundPercent).toBe(80);
   });
 });
