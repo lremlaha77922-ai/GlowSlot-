@@ -250,7 +250,7 @@ export const SalonListScreen: React.FC<SalonListScreenProps> = ({
           ) : salons.length === 0 ? (
             <EmptyState
               title="No salons found"
-              description="Try adjusting your filters, location, or search term."
+              helperText="Try adjusting your filters, location, or search term."
               actionLabel="Reset Filters"
               onAction={() => {
                 setFilters({

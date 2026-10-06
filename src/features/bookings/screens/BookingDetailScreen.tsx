@@ -25,9 +25,12 @@ import {
   FileText,
   CalendarPlus,
   RefreshCw,
+  Info,
 } from 'lucide-react';
 import { useUIStore } from '../../../store/useUIStore';
 import { useSessionStore } from '../../../store/useSessionStore';
+import { openInGoogleMaps } from '../../../utils/mapHelper';
+import { CancellationPolicyModal } from '../components/CancellationPolicyModal';
 
 interface BookingDetailScreenProps {
   bookingId: string;
@@ -46,6 +49,7 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelSheetOpen, setIsCancelSheetOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
   const { user } = useSessionStore();
   const { showToast } = useUIStore();
 
@@ -78,8 +82,12 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
   const rescheduleCheck = bookingService.canReschedule(booking);
 
   const handleDirections = () => {
-    const query = booking.salonAddress || booking.salonName;
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
+    openInGoogleMaps(
+      booking.salonName,
+      booking.salonAddress || booking.salonName,
+      booking.latitude,
+      booking.longitude
+    );
   };
 
   const handleContactSalon = () => {
@@ -271,20 +279,81 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
             <span className="font-mono text-primary">{formatMoney(totalPaise)}</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/60 text-xs">
-            <div className="bg-emerald-50 dark:bg-emerald-950/30 p-2.5 rounded-button border border-emerald-200">
-              <span className="text-[10px] text-emerald-700 uppercase font-semibold block">Advance Paid (25%)</span>
-              <span className="font-mono font-extrabold text-emerald-800 dark:text-emerald-300 text-sm">
-                {formatMoney(advancePaidPaise)}
-              </span>
+          {booking.status !== 'cancelled' ? (
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/60 text-xs">
+              <div className="bg-emerald-50 dark:bg-emerald-950/30 p-2.5 rounded-button border border-emerald-200">
+                <span className="text-[10px] text-emerald-700 uppercase font-semibold block">Advance Paid (25%)</span>
+                <span className="font-mono font-extrabold text-emerald-800 dark:text-emerald-300 text-sm">
+                  {formatMoney(advancePaidPaise)}
+                </span>
+              </div>
+              <div className="bg-bg p-2.5 rounded-button border border-border">
+                <span className="text-[10px] text-muted uppercase font-semibold block">Balance Due at Salon</span>
+                <span className="font-mono font-extrabold text-text text-sm">
+                  {formatMoney(balanceDuePaise)}
+                </span>
+              </div>
             </div>
-            <div className="bg-bg p-2.5 rounded-button border border-border">
-              <span className="text-[10px] text-muted uppercase font-semibold block">Balance Due at Salon</span>
-              <span className="font-mono font-extrabold text-text text-sm">
-                {formatMoney(balanceDuePaise)}
-              </span>
+          ) : (
+            <div className="pt-2 border-t border-border/60 flex flex-col gap-2">
+              <div className="flex items-center justify-between text-error bg-error/5 p-2 rounded-button border border-error/20">
+                <div className="flex items-center gap-1.5">
+                  <XCircle size={14} />
+                  <span className="font-bold uppercase tracking-tight text-[10px]">Cancelled</span>
+                </div>
+                <span className="font-mono font-bold">{formatMoney(booking.cancellation?.refundAmountPaise || 0)} Refunded</span>
+              </div>
+              {booking.cancellation?.reason && (
+                <p className="text-[11px] text-muted italic">Reason: {booking.cancellation.reason}</p>
+              )}
+
+              {/* Refund Request Status for Customer */}
+              {booking.cancellation?.refundStatus && booking.cancellation.refundStatus !== 'none' && (
+                <div className="mt-2 pt-2 border-t border-border/40 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-muted uppercase">Refund Status</span>
+                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-chip tracking-widest ${
+                      booking.cancellation.refundStatus === 'pending_approval' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
+                      booking.cancellation.refundStatus === 'refunded' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                      booking.cancellation.refundStatus === 'processing' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
+                      'bg-rose-50 text-rose-600 border border-rose-200'
+                    }`}>
+                      {booking.cancellation.refundStatus.replace('_', ' ')}
+                    </span>
+                  </div>
+                  
+                  {booking.cancellation.refundUpiId && (
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-muted">UPI ID:</span>
+                      <span className="font-mono font-bold">{booking.cancellation.refundUpiId}</span>
+                    </div>
+                  )}
+                  
+                  {booking.cancellation.refundTxReference && (
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-muted">Refund Ref:</span>
+                      <span className="font-mono font-bold text-primary">{booking.cancellation.refundTxReference}</span>
+                    </div>
+                  )}
+
+                  {booking.cancellation.refundStatus === 'refunded' && (
+                    <div className="bg-emerald-50/50 p-2 rounded-button text-[10px] text-emerald-700 font-medium leading-relaxed mt-1">
+                      Refund of {formatMoney(booking.cancellation.refundAmountPaise)} has been credited to your account.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
+          )}
+          {booking.status === 'upcoming' && (
+            <button 
+              onClick={() => setIsPolicyModalOpen(true)}
+              className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 mt-1 mx-auto w-fit"
+            >
+              <Info size={12} />
+              View Cancellation Policy
+            </button>
+          )}
         </div>
 
         {/* Action Buttons Suite according to state */}
@@ -397,6 +466,14 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
           }}
         />
       )}
+
+      {/* Cancellation Policy Modal */}
+      <CancellationPolicyModal
+        isOpen={isPolicyModalOpen}
+        onClose={() => setIsPolicyModalOpen(false)}
+        bookingId={booking.id}
+        onProceedToCancel={booking.status === 'upcoming' ? () => setIsCancelSheetOpen(true) : undefined}
+      />
     </div>
   );
 };

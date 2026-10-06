@@ -1,7 +1,8 @@
 import React from 'react';
 import { Salon } from '../types';
 import { formatMoney } from '../utils/money';
-import { Star, MapPin, Heart, Clock, ShieldCheck, CheckCircle2, ChevronRight, Calendar } from 'lucide-react';
+import { Star, MapPin, Heart, Clock, ShieldCheck, CheckCircle2, ChevronRight, Calendar, Navigation } from 'lucide-react';
+import { openInGoogleMaps } from '../utils/mapHelper';
 
 export interface SalonCardProps {
   salon: Salon;
@@ -157,11 +158,24 @@ export const SalonCard: React.FC<SalonCardProps> = ({
                 <span className="text-muted font-normal text-[11px]">({salon.reviewCount})</span>
               </div>
 
-              <div className="flex items-center gap-1 text-[11px]">
-                <MapPin size={12} className="text-primary/80" />
-                <span className="truncate max-w-[110px]">{salon.area}</span>
-                <span>•</span>
-                <span className="font-semibold">{salon.distanceKm} km</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 text-[11px]">
+                  <MapPin size={12} className="text-primary/80" />
+                  <span className="truncate max-w-[80px]">{salon.area}</span>
+                  <span>•</span>
+                  <span className="font-semibold">{salon.distanceKm} km</span>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openInGoogleMaps(salon.name, salon.address, salon.latitude, salon.longitude);
+                  }}
+                  className="p-1 text-primary hover:bg-primary-soft rounded-full transition-colors cursor-pointer"
+                  title={`Get directions to ${salon.name}`}
+                  aria-label={`Get directions to ${salon.name}`}
+                >
+                  <Navigation size={12} />
+                </button>
               </div>
             </div>
 
@@ -263,9 +277,23 @@ export const SalonCard: React.FC<SalonCardProps> = ({
             </div>
             <span>({salon.reviewCount} reviews)</span>
             <span>•</span>
-            <span>{salon.area}</span>
-            <span>•</span>
-            <span className="font-semibold text-text">{salon.distanceKm} km</span>
+            <div className="flex items-center gap-1">
+              <MapPin size={11} className="text-primary shrink-0" />
+              <span className="truncate">{salon.area}</span>
+              <span>•</span>
+              <span className="font-semibold text-text">{salon.distanceKm} km</span>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openInGoogleMaps(salon.name, salon.address, salon.latitude, salon.longitude);
+              }}
+              className="flex items-center gap-1 text-primary font-bold hover:underline cursor-pointer ml-1"
+              aria-label={`Get directions to ${salon.name}`}
+            >
+              <Navigation size={11} />
+              <span>Directions</span>
+            </button>
           </div>
         </div>
 

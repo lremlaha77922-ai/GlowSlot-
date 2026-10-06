@@ -79,6 +79,8 @@ export interface Salon {
   dealEndsInMinutes?: number;
   aboutText?: string;
   amenities?: string[];
+  latitude?: number;
+  longitude?: number;
   services?: SalonServiceItem[];
   packages?: PackageItem[];
   reviews?: ReviewItem[];
@@ -91,6 +93,7 @@ export interface PromoBanner {
   subtitle: string;
   tag: string;
   bgGradient: string;
+  imageUrl?: string;
   link?: string;
 }
 
@@ -182,13 +185,21 @@ export interface Coupon {
 
 export type PaymentMethod = 'upi' | 'card' | 'netbanking' | 'pay_at_salon';
 
-export type BookingStatus = 'upcoming' | 'pending' | 'completed' | 'cancelled';
+export type BookingStatus = 'upcoming' | 'pending' | 'completed' | 'cancelled' | 'confirmed' | 'in_progress';
+
+export type RefundStatus = 'none' | 'pending_approval' | 'approved' | 'processing' | 'refunded' | 'failed' | 'rejected';
 
 export interface BookingCancellation {
   reason: string;
   refundAmountPaise: number;
   refundPercent: number;
   cancelledAt: string;
+  refundStatus?: RefundStatus;
+  refundUpiId?: string;
+  refundRequestAt?: string;
+  refundApprovedAt?: string;
+  refundTxReference?: string;
+  refundErrorReason?: string;
 }
 
 export interface BookingReview {
@@ -203,6 +214,8 @@ export interface Booking {
   type: 'salon' | 'athome';
   salonName: string;
   salonAddress?: string;
+  latitude?: number;
+  longitude?: number;
   userAddress?: UserAddress;
   services: {
     name: string;
@@ -223,7 +236,7 @@ export interface Booking {
   advancePaise?: number;
   balancePaise?: number;
   paymentMethod: PaymentMethod;
-  paymentStatus: 'paid' | 'pay_later';
+  paymentStatus: 'paid' | 'pay_later' | 'refunded' | 'refund_pending';
   status: BookingStatus;
   createdAt: string;
   rescheduleCount: number;

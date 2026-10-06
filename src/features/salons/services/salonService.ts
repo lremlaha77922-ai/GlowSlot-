@@ -26,6 +26,8 @@ export const salonService = {
       badgeType: row.badge_type || 'TOP RATED',
       amenities: row.amenities || ['AC', 'WiFi', 'Beverages'],
       aboutText: row.about_text || 'Premium salon offering bespoke hair, grooming, and skincare services.',
+      latitude: row.latitude ? Number(row.latitude) : undefined,
+      longitude: row.longitude ? Number(row.longitude) : undefined,
     };
   },
 

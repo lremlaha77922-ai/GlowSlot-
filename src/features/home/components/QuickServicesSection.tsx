@@ -113,7 +113,7 @@ export const QuickServicesSection: React.FC<QuickServicesSectionProps> = ({
                 <Button
                   onClick={handleBook}
                   variant="primary"
-                  size="xs"
+                  size="sm"
                   fullWidth
                   className="font-bold text-[11px] py-1 h-7 rounded-button"
                 >

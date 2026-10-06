@@ -110,20 +110,6 @@ export const authService = {
 
         console.log('[AUTH] Profile creation result:', profileRes);
 
-        // Apply referral if exists
-        if (referralCode && referralCode.trim()) {
-          try {
-            const { error: refError } = await supabase.rpc('apply_referral', { p_referral_code: referralCode.trim() });
-            if (refError) {
-              console.error('[AUTH] Referral application failed:', refError.message);
-            } else {
-              console.log('[AUTH] Referral applied successfully!');
-            }
-          } catch (err) {
-            console.error('[AUTH] Referral application exception:', err);
-          }
-        }
-
         // If email confirmation is enabled on Supabase project, session is null until confirmed
         if (!data.session) {
           return {
@@ -354,7 +340,13 @@ export const authService = {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, sbSession) => {
         console.log('[Supabase Auth] Auth state change event:', event, 'User ID:', sbSession?.user?.id || null);
-        if (sbSession?.user) {
+        
+        if (event === 'SIGNED_OUT' || !sbSession?.user) {
+          callback(null);
+          return;
+        }
+
+        try {
           const profile = await this.getProfile(sbSession.user.id);
           callback({
             id: sbSession.user.id,
@@ -364,8 +356,16 @@ export const authService = {
             gender: profile?.gender || sbSession.user.user_metadata?.gender || 'male',
             points: profile?.points ?? 100,
           });
-        } else {
-          callback(null);
+        } catch (error) {
+          console.error('[Supabase Auth] Error fetching profile on auth state change:', error);
+          // Still callback with basic user info if profile fetch fails
+          callback({
+            id: sbSession.user.id,
+            email: sbSession.user.email,
+            name: sbSession.user.user_metadata?.full_name || 'GlowSlot User',
+            gender: sbSession.user.user_metadata?.gender || 'male',
+            points: 100,
+          });
         }
       }
     );

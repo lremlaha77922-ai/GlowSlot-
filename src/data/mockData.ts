@@ -191,6 +191,8 @@ export const mockSalons: Salon[] = [
     aboutText:
       'Luxe Cut & Style Studio is a premier grooming parlour offering bespoke haircuts, beard styling, skin rejuvenation and express spa treatments. Enjoy zero wait times with guaranteed time slot holds.',
     amenities: ['Air Conditioned', 'Free Wi-Fi', 'Complimentary Beverages', 'Sanitized Tools', 'Card & UPI'],
+    latitude: 12.9352,
+    longitude: 77.6244,
     specialists: defaultSpecialists,
     services: [
       {
@@ -314,6 +316,8 @@ export const mockSalons: Salon[] = [
     aboutText:
       'Trendy modern barbershop specializing in fade haircuts, classic hot lather shaves and beard design. Fast service, premium coffee bar.',
     amenities: ['Coffee Bar', 'Air Conditioned', 'Free Wi-Fi', 'Parking Available'],
+    latitude: 12.9784,
+    longitude: 77.6408,
     services: [
       {
         id: 'srv-201',
@@ -380,6 +384,8 @@ export const mockSalons: Salon[] = [
     aboutText:
       'Classic gentleman styling parlour with traditional craftsmanship and friendly seasoned stylists.',
     amenities: ['Air Conditioned', 'Sanitized Kits', 'UPI Accepted'],
+    latitude: 12.9103,
+    longitude: 77.6450,
     services: [
       {
         id: 'srv-301',

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, ShieldCheck, BarChart2, BellRing, Settings, Users } from 'lucide-react';
 import { ReengagementReminderSummary } from './ReengagementReminderSummary';
+import { RefundRequestsSummary } from './RefundRequestsSummary';
 
 interface AdminDashboardProps {
   onBack?: () => void;
@@ -46,6 +47,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
         {/* 30-Day Customer Re-engagement Automation Monitoring Card */}
         <section className="bg-surface rounded-card border border-border shadow-level-1 p-4 sm:p-5">
           <ReengagementReminderSummary />
+        </section>
+
+        {/* Refund Management Section */}
+        <section className="bg-surface rounded-card border border-border shadow-level-1 p-4 sm:p-5">
+          <RefundRequestsSummary />
         </section>
       </main>
     </div>

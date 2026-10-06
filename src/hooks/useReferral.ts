@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { referralService } from '../../features/profile/services/referralService';
-import { useUIStore } from '../../store/useUIStore';
+import { referralService } from '../features/profile/services/referralService';
+import { useUIStore } from '../store/useUIStore';
 
 export const useReferral = () => {
   const [loading, setLoading] = useState(false);

@@ -20,9 +20,11 @@ import {
   Sparkles,
   Flame,
   CheckCircle2,
+  Navigation,
   Calendar,
 } from 'lucide-react';
 import { useUIStore } from '../../../store/useUIStore';
+import { openInGoogleMaps } from '../../../utils/mapHelper';
 
 interface SalonDetailScreenProps {
   salonId: string;
@@ -206,13 +208,23 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 text-xs text-muted pt-2 border-t border-border">
-            <span className="flex items-center gap-1">
-              <MapPin size={13} className="text-primary" /> {salon.area} ({salon.distanceKm} km)
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock size={13} className="text-primary" /> {salon.isOpen ? 'Open Now' : 'Closed'}
-            </span>
+            <div className="flex items-center justify-between text-xs text-muted pt-2 border-t border-border">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1">
+                <MapPin size={13} className="text-primary" /> {salon.area} ({salon.distanceKm} km)
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock size={13} className="text-primary" /> {salon.isOpen ? 'Open Now' : 'Closed'}
+              </span>
+            </div>
+            <button
+              onClick={() => openInGoogleMaps(salon.name, salon.address, salon.latitude, salon.longitude)}
+              className="flex items-center gap-1 text-primary font-bold hover:underline cursor-pointer"
+              aria-label={`Get directions to ${salon.name}`}
+            >
+              <Navigation size={13} />
+              <span>Directions</span>
+            </button>
           </div>
         </div>
 
@@ -347,9 +359,19 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
             </div>
 
             <div className="bg-surface rounded-card border border-border p-4 shadow-xs">
-              <h3 className="text-xs font-bold text-text uppercase tracking-wider mb-2">
-                Location & Address
-              </h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-bold text-text uppercase tracking-wider">
+                  Location & Address
+                </h3>
+                <button
+                  onClick={() => openInGoogleMaps(salon.name, salon.address, salon.latitude, salon.longitude)}
+                  className="text-xs font-bold text-primary flex items-center gap-1 hover:underline cursor-pointer"
+                  aria-label={`Get directions to ${salon.name}`}
+                >
+                  <Navigation size={14} />
+                  <span>Get Directions</span>
+                </button>
+              </div>
               <p className="text-xs text-text">{salon.address}</p>
             </div>
 

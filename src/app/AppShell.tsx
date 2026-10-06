@@ -39,6 +39,7 @@ import { Salon, SlotItem, Booking } from '../types';
 import { mockSalons } from '../data/mockData';
 import { bookingService } from '../features/bookings/services/bookingService';
 import { authService } from '../features/auth/services/authService';
+import { referralService } from '../features/profile/services/referralService';
 import { App as CapacitorApp } from '@capacitor/app';
 
 type ViewMode =
@@ -78,7 +79,7 @@ export const AppShell: React.FC = () => {
     showToast,
   } = useUIStore();
 
-  const { user, returnTarget, setReturnTarget, setUser } = useSessionStore();
+  const { user, returnTarget, setReturnTarget, setUser, setReferralCode, getReferralCode } = useSessionStore();
 
   const [currentView, setCurrentView] = useState<ViewMode>('splash');
   const [selectedSalonId, setSelectedSalonId] = useState<string | null>(null);
@@ -157,7 +158,14 @@ export const AppShell: React.FC = () => {
   useEffect(() => {
     // Check initial route
     const path = window.location.pathname;
-    if (path === '/invite') {
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('ref') || params.get('referral');
+
+    if (refCode) {
+      setReferralCode(refCode.toUpperCase());
+    }
+
+    if (path === '/invite' || path === '/signup') {
       if (user) {
         showToast('You are already signed in.');
         setCurrentView('tabs');
@@ -165,13 +173,24 @@ export const AppShell: React.FC = () => {
         setCurrentView('invite');
       }
     }
-  }, [user]);
+  }, [user, setReferralCode]);
+
+  useEffect(() => {
+    const applyReferral = async () => {
+      const code = getReferralCode();
+      if (user && code) {
+        console.log('[GlowSlot] Applying referral code:', code);
+        await referralService.applyReferral(code);
+        setReferralCode(null);
+      }
+    };
+    applyReferral();
+  }, [user, getReferralCode, setReferralCode]);
 
   useEffect(() => {
     const sub = authService.onAuthStateChange((sessionUser) => {
-      if (sessionUser) {
-        setUser(sessionUser);
-      }
+      console.log('[AppShell] Auth listener callback:', sessionUser);
+      setUser(sessionUser);
     });
 
     return () => {

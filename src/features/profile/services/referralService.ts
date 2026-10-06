@@ -102,4 +102,22 @@ export const referralService = {
 
     return { success: true };
   },
+
+  async applyReferral(referralCode: string): Promise<{ success: boolean; error?: string }> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { error } = await supabase.rpc('apply_referral', { p_referral_code: referralCode.trim() });
+        if (error) {
+          console.error('[REFERRAL] apply_referral RPC failed:', error.message);
+          return { success: false, error: error.message };
+        }
+        console.log('[REFERRAL] Referral applied successfully!');
+        return { success: true };
+      } catch (err: any) {
+        console.error('[REFERRAL] apply_referral RPC exception:', err);
+        return { success: false, error: err?.message || 'Failed to apply referral' };
+      }
+    }
+    return { success: true };
+  }
 };

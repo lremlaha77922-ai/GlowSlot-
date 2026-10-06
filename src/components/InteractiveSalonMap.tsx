@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Salon } from '../types';
 import { formatMoney } from '../utils/money';
-import { Star, MapPin, Navigation, Compass, CheckCircle2, ChevronRight, X } from 'lucide-react';
+import { Navigation, Compass, CheckCircle2, Star, MapPin, X } from 'lucide-react';
 import { Button } from './Button';
+import { openInGoogleMaps } from '../utils/mapHelper';
 
 interface InteractiveSalonMapProps {
   salons: Salon[];
@@ -101,17 +102,28 @@ export const InteractiveSalonMap: React.FC<InteractiveSalonMapProps> = ({
           </div>
 
           <div className="flex flex-col gap-1.5 shrink-0">
-            <button
-              onClick={() => onSelectSalon(activeMarker.id)}
-              className="px-2.5 py-1.5 rounded-button border border-border bg-surface hover:bg-primary-soft text-text text-[11px] font-bold transition-colors cursor-pointer"
-            >
-              View
-            </button>
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => openInGoogleMaps(activeMarker.name, activeMarker.address, activeMarker.latitude, activeMarker.longitude)}
+                className="flex-1 px-2.5 py-1.5 rounded-button border border-border bg-surface hover:bg-primary-soft text-primary text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                title={`Get directions to ${activeMarker.name}`}
+                aria-label={`Get directions to ${activeMarker.name}`}
+              >
+                <Navigation size={12} />
+                <span>Map</span>
+              </button>
+              <button
+                onClick={() => onSelectSalon(activeMarker.id)}
+                className="flex-1 px-2.5 py-1.5 rounded-button border border-border bg-surface hover:bg-primary-soft text-text text-[11px] font-bold transition-colors cursor-pointer"
+              >
+                View
+              </button>
+            </div>
             <button
               onClick={() => onBookNow(activeMarker)}
-              className="px-2.5 py-1.5 rounded-button bg-primary hover:bg-primary-hover text-white text-[11px] font-bold transition-colors cursor-pointer shadow-xs"
+              className="w-full py-1.5 rounded-button bg-primary hover:bg-primary-hover text-white text-[11px] font-bold transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-1"
             >
-              Book
+              <span>Book Appointment</span>
             </button>
           </div>
         </div>

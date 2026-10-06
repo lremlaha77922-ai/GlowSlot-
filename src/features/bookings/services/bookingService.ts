@@ -102,6 +102,8 @@ export const bookingService = {
             type: b.booking_type || 'salon',
             salonName: b.salons?.name || 'GlowSlot Salon',
             salonAddress: b.salons?.address,
+            latitude: b.salons?.latitude ? Number(b.salons.latitude) : undefined,
+            longitude: b.salons?.longitude ? Number(b.salons.longitude) : undefined,
             services: b.booking_items?.map((item: any) => ({
               name: item.service_name || 'Service',
               durationMin: Number(item.duration_min) || 30,
@@ -125,6 +127,18 @@ export const bookingService = {
             status: b.status,
             createdAt: b.created_at,
             rescheduleCount: Number(b.reschedule_count) || 0,
+            cancellation: b.status === 'cancelled' ? {
+              reason: b.cancellation_reason || 'Unknown',
+              refundAmountPaise: Number(b.refund_amount_paise) || 0,
+              refundPercent: (Number(b.refund_amount_paise) && Number(b.advance_paise)) ? Math.round((Number(b.refund_amount_paise) / Number(b.advance_paise)) * 100) : 0,
+              cancelledAt: b.cancelled_at || b.created_at,
+              refundStatus: b.refund_status,
+              refundUpiId: b.refund_upi_id,
+              refundRequestAt: b.refund_request_at,
+              refundApprovedAt: b.refund_approved_at,
+              refundTxReference: b.refund_tx_reference,
+              refundErrorReason: b.refund_error_reason,
+            } : undefined,
             review: b.reviews?.[0]
               ? {
                   rating: Number(b.reviews[0].rating),
@@ -537,6 +551,8 @@ export const bookingService = {
           type: params.userAddress ? 'athome' : 'salon',
           salonName: params.salonName,
           salonAddress: params.salonAddress,
+          latitude: data?.latitude ? Number(data.latitude) : undefined,
+          longitude: data?.longitude ? Number(data.longitude) : undefined,
           userAddress: params.userAddress,
           services: params.services,
           slot: params.slot,
@@ -599,26 +615,35 @@ export const bookingService = {
     return { allowed: true };
   },
 
-  calculateRefund(booking: Booking): { refundPercent: number; refundAmountPaise: number; hoursRemaining: number } {
+  calculateRefund(booking: Booking): { refundPercent: number; refundAmountPaise: number; hoursRemaining: number; isSameDay: boolean } {
     const appointmentDate = new Date(`${booking.slot.date}T${booking.slot.time}:00`);
-    const diffHours = (appointmentDate.getTime() - Date.now()) / (1000 * 60 * 60);
+    const now = new Date();
+    const diffHours = (appointmentDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    const isSameDay = appointmentDate.toDateString() === now.toDateString();
 
     let refundPercent = 0;
-    if (diffHours >= 4) {
-      refundPercent = 100;
-    } else if (diffHours >= 1) {
-      refundPercent = 50;
+    
+    // RULES:
+    // - Same day: 0 refund
+    // - > 24 hours: 80% refund of advance
+    // - <= 24 hours: 0 refund
+    
+    if (isSameDay) {
+      refundPercent = 0;
+    } else if (diffHours > 24) {
+      refundPercent = 80;
     } else {
       refundPercent = 0;
     }
 
-    const refundableTotal = booking.paymentStatus === 'paid' ? booking.totalPaise : 0;
-    const refundAmountPaise = Math.round((refundableTotal * refundPercent) / 100);
+    const paidAdvance = booking.advancePaise || 0;
+    const refundAmountPaise = Math.round((paidAdvance * refundPercent) / 100);
 
     return {
       refundPercent,
       refundAmountPaise,
       hoursRemaining: Math.max(0, diffHours),
+      isSameDay,
     };
   },
 
@@ -627,29 +652,11 @@ export const bookingService = {
     reason: string,
     userId?: string
   ): Promise<{ success: boolean; refundAmountPaise: number; refundPercent: number; error?: string }> {
-    const list = getStoredBookings();
-    const booking = list.find((b) => b.id === bookingId);
-    if (!booking) return { success: false, refundAmountPaise: 0, refundPercent: 0, error: 'Booking not found' };
-
-    // Calculate hours until appointment
-    const appointmentDate = new Date(`${booking.slot.date}T${booking.slot.time}:00`);
-    const diffHours = (appointmentDate.getTime() - Date.now()) / (1000 * 60 * 60);
-
-    let refundPercent = 0;
-    if (diffHours >= 4) {
-      refundPercent = 100;
-    } else if (diffHours >= 1) {
-      refundPercent = 50;
-    } else {
-      refundPercent = 0;
-    }
-
-    const refundableTotal = booking.paymentStatus === 'paid' ? booking.totalPaise : 0;
-    const refundAmountPaise = Math.round((refundableTotal * refundPercent) / 100);
+    const { refundAmountPaise: localRefund, refundPercent: localPercent } = this.calculateRefund(await this.getBookingById(bookingId, userId) as Booking);
 
     if (userId && isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
       try {
-        const { error } = await supabase.rpc('cancel_booking', {
+        const { data, error } = await supabase.rpc('cancel_booking', {
           p_booking_id: bookingId,
           p_user_id: userId,
           p_reason: reason,
@@ -658,11 +665,25 @@ export const bookingService = {
         if (error) {
           return { success: false, refundAmountPaise: 0, refundPercent: 0, error: getFriendlyErrorMessage(error.message) };
         }
+        
+        // RPC returns a table/array of results
+        const result = Array.isArray(data) ? data[0] : data;
+        
+        if (result && !result.success) {
+          return { success: false, refundAmountPaise: 0, refundPercent: 0, error: result.error_message || 'Cancellation failed' };
+        }
+
+        return { 
+          success: true, 
+          refundAmountPaise: Number(result?.refund_amount_paise) || 0, 
+          refundPercent: Number(result?.refund_percent) || 0 
+        };
       } catch (err: any) {
         return { success: false, refundAmountPaise: 0, refundPercent: 0, error: getFriendlyErrorMessage(err?.message) };
       }
     }
 
+    const list = getStoredBookings();
     const updated = list.map((b) =>
       b.id === bookingId
         ? {
@@ -670,8 +691,8 @@ export const bookingService = {
             status: 'cancelled' as const,
             cancellation: {
               reason,
-              refundAmountPaise,
-              refundPercent,
+              refundAmountPaise: localRefund,
+              refundPercent: localPercent,
               cancelledAt: new Date().toISOString(),
             },
           }
@@ -681,9 +702,130 @@ export const bookingService = {
 
     return {
       success: true,
-      refundAmountPaise,
-      refundPercent,
+      refundAmountPaise: localRefund,
+      refundPercent: localPercent,
     };
+  },
+
+  async submitRefundRequest(bookingId: string, upiId: string, userId?: string): Promise<{ success: boolean; error?: string }> {
+    if (userId && isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data, error } = await supabase.rpc('submit_refund_request', {
+          p_booking_id: bookingId,
+          p_user_id: userId,
+          p_upi_id: upiId,
+        });
+        if (error) return { success: false, error: getFriendlyErrorMessage(error.message) };
+        return { success: !!data };
+      } catch (err: any) {
+        return { success: false, error: getFriendlyErrorMessage(err?.message) };
+      }
+    }
+
+    // Mock
+    const list = getStoredBookings();
+    const updated = list.map(b => b.id === bookingId ? {
+      ...b,
+      cancellation: {
+        ...b.cancellation!,
+        refundStatus: 'pending_approval' as const,
+        refundUpiId: upiId,
+        refundRequestAt: new Date().toISOString()
+      }
+    } : b);
+    saveStoredBookings(updated);
+    return { success: true };
+  },
+
+  async adminGetRefundRequests(): Promise<Booking[]> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('*, salons(name), profiles(full_name, phone, email)')
+          .eq('status', 'cancelled')
+          .neq('refund_status', 'none')
+          .order('refund_request_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        return data.map((b: any) => ({
+          ...b,
+          customerName: b.profiles?.full_name,
+          customerPhone: b.profiles?.phone,
+          salonName: b.salons?.name,
+          cancellation: {
+            reason: b.cancellation_reason,
+            refundAmountPaise: Number(b.refund_amount_paise),
+            refundPercent: 80, // standardized
+            cancelledAt: b.cancelled_at,
+            refundStatus: b.refund_status,
+            refundUpiId: b.refund_upi_id,
+            refundRequestAt: b.refund_request_at,
+          }
+        })) as any;
+      } catch { return []; }
+    }
+    return getStoredBookings().filter(b => b.status === 'cancelled' && b.cancellation?.refundStatus === 'pending_approval');
+  },
+
+  async adminApproveRefund(bookingId: string, adminId: string): Promise<{ success: boolean; message?: string }> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data, error } = await supabase.rpc('admin_approve_refund', {
+          p_booking_id: bookingId,
+          p_admin_id: adminId,
+        });
+        if (error) return { success: false, message: getFriendlyErrorMessage(error.message) };
+        const res = Array.isArray(data) ? data[0] : data;
+        return { success: res?.success, message: res?.message };
+      } catch (err: any) {
+        return { success: false, message: getFriendlyErrorMessage(err?.message) };
+      }
+    }
+    
+    // Mock
+    const list = getStoredBookings();
+    const updated = list.map(b => b.id === bookingId ? {
+      ...b,
+      paymentStatus: 'refunded' as const,
+      cancellation: {
+        ...b.cancellation!,
+        refundStatus: 'refunded' as const,
+        refundTxReference: 'RZP-MOCK-' + Math.floor(Math.random()*1000000),
+        refundApprovedAt: new Date().toISOString()
+      }
+    } : b);
+    saveStoredBookings(updated);
+    return { success: true, message: 'Refund Processed' };
+  },
+
+  async adminRejectRefund(bookingId: string, reason: string): Promise<{ success: boolean; error?: string }> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data, error } = await supabase.rpc('admin_reject_refund', {
+          p_booking_id: bookingId,
+          p_reason: reason,
+        });
+        if (error) return { success: false, error: getFriendlyErrorMessage(error.message) };
+        return { success: !!data };
+      } catch (err: any) {
+        return { success: false, error: getFriendlyErrorMessage(err?.message) };
+      }
+    }
+    
+    // Mock
+    const list = getStoredBookings();
+    const updated = list.map(b => b.id === bookingId ? {
+      ...b,
+      cancellation: {
+        ...b.cancellation!,
+        refundStatus: 'rejected' as const,
+        refundErrorReason: reason
+      }
+    } : b);
+    saveStoredBookings(updated);
+    return { success: true };
   },
 
   async rescheduleBooking(

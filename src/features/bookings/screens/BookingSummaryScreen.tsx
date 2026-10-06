@@ -119,9 +119,10 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
     showToast('Special instructions updated');
   };
 
-  // COMPLETE PAYMENT & SLOT-LOCK FLOW
   const handlePayAndLockSlot = async () => {
-    console.log('[GlowSlot] Continue to QR Payment clicked');
+    console.log('[GlowSlot] Continue to QR Payment clicked, isProcessingPayment:', isProcessingPayment);
+    
+    if (isProcessingPayment) return; // Prevent double clicks
     
     // 1. Validation
     if (!slot || !slot.id || !slot.date || !slot.time) {
@@ -164,7 +165,7 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
   const handleConfirmPayment = async () => {
     setIsProcessingPayment(true);
     try {
-      // Process Payment
+      // Process Payment for 25% Advance Deposit
       const payRes = await paymentService.processPayment(
         {
           amountPaise: deposit25Paise,
@@ -178,15 +179,16 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
         simulateFailure
       );
 
+      // Handle Payment Failure
       if (!payRes.success) {
         await slotService.releaseSlot(slot.id, user?.id);
-        showToast(payRes.errorMessage || 'Payment failed.');
+        showToast(payRes.errorMessage || 'Payment failed. Slot lock has been released.');
         setShowPaymentQR(false); // Return to summary
         setIsProcessingPayment(false);
         return;
       }
 
-      // Create booking
+      // Payment Successful: Create confirmed booking
       const bookingRes = await bookingService.createBooking({
         userId: user?.id || 'guest',
         slotId: slot.id,
@@ -214,12 +216,13 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
 
       if (!bookingRes.success || !bookingRes.booking) {
         await slotService.releaseSlot(slot.id, user?.id);
-        showToast('Failed to confirm booking after payment.');
+        showToast(bookingRes.error || 'Failed to confirm booking after payment.');
         setShowPaymentQR(false); // Return to summary
         setIsProcessingPayment(false);
         return;
       }
 
+      // Confirmed Booking Created
       showToast(`Booking confirmed! Reference: ${bookingRes.booking.id}`);
       setIsProcessingPayment(false);
 
@@ -249,6 +252,21 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
       setIsProcessingPayment(false);
     }
   };
+
+  // Conditional Rendering
+  if (showPaymentQR) {
+    return (
+      <NexoraPaymentScreen 
+        amountPaise={deposit25Paise} 
+        onConfirm={handleConfirmPayment} 
+        onCancel={() => {
+            // Releasing the slot lock if user cancels the payment view
+            slotService.releaseSlot(slot.id, user?.id);
+            setShowPaymentQR(false);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg text-text pb-36">

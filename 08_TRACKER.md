@@ -164,6 +164,7 @@ Last updated: 2026-10-02  |  Current phase: **Phase 6B (DONE)**  |  Prompts: `12
 | 6B.5 | README & Keystore security | DONE | Android build guide, keystore ignored in .gitignore |
 | 6B.6 | Referrals Table | DONE | Created referrals table and RLS policies |
 | 6B.7 | useReferral hook | DONE | Implemented hook for referral code management |
+| 6C.1 | CancellationPolicyModal | DONE | New informational component with refund estimates |
 
 ---
 
