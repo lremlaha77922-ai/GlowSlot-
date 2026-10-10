@@ -1,11 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Sheet } from '../../../components/Sheet';
-import { Button } from '../../../components/Button';
 import { Booking } from '../../../types';
-import { bookingService } from '../services/bookingService';
-import { Star } from 'lucide-react';
-import { useUIStore } from '../../../store/useUIStore';
-import { useSessionStore } from '../../../store/useSessionStore';
+import { ServiceReviewRatingCard } from './ServiceReviewRatingCard';
 
 interface WriteReviewModalProps {
   isOpen: boolean;
@@ -14,148 +10,22 @@ interface WriteReviewModalProps {
   onReviewSubmitted: (updatedBooking: Booking) => void;
 }
 
-const REVIEW_TAGS = [
-  'Great Service',
-  'Professional Staff',
-  'Clean Salon',
-  'Good Value',
-  'Friendly Staff',
-];
-
 export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
   isOpen,
   onClose,
   booking,
   onReviewSubmitted,
 }) => {
-  const [rating, setRating] = useState(5);
-  const [selectedTags, setSelectedTags] = useState<string[]>(['Great Service', 'Professional Staff', 'Clean Salon']);
-  const [comment, setComment] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { user } = useSessionStore();
-  const { showToast } = useUIStore();
-
-  const toggleTag = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (booking.status !== 'completed') {
-      showToast('Reviews are only permitted for completed appointments.');
-      return;
-    }
-
-    if (booking.review) {
-      showToast('You have already submitted a review for this booking.');
-      return;
-    }
-
-    if (!comment.trim()) {
-      showToast('Please add a few words to your review.');
-      return;
-    }
-
-    const reviewObj = {
-      rating,
-      tags: selectedTags,
-      text: comment.trim(),
-      submittedAt: new Date().toISOString(),
-    };
-
-    setIsLoading(true);
-    const res = await bookingService.addReview(booking.id, reviewObj, user?.id);
-    setIsLoading(false);
-
-    if (res.success) {
-      showToast('Thank you! Your review has been submitted.');
-      onReviewSubmitted({
-        ...booking,
-        review: reviewObj,
-      });
-      onClose();
-    } else {
-      showToast(res.error || 'Failed to submit review.');
-    }
-  };
-
   return (
-    <Sheet isOpen={isOpen} onClose={onClose} title="Rate Your Experience">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 pb-4">
-        <div className="text-center py-2">
-          <span className="text-xs text-muted block mb-1">Rate your experience with</span>
-          <h3 className="text-sm font-bold text-text">{booking.salonName}</h3>
-
-          {/* Star selector (1-5 stars) */}
-          <div className="flex items-center justify-center gap-2 mt-3">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <button
-                type="button"
-                key={s}
-                onClick={() => setRating(s)}
-                className="p-1 cursor-pointer transition-transform hover:scale-110"
-                aria-label={`${s} star`}
-              >
-                <Star
-                  size={28}
-                  className={
-                    s <= rating
-                      ? 'text-deal fill-deal transition-colors'
-                      : 'text-border'
-                  }
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tags Selector */}
-        <div>
-          <label className="text-xs font-bold text-text uppercase tracking-wider block mb-2">
-            What went well? (Optional Tags)
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {REVIEW_TAGS.map((tag) => {
-              const isSelected = selectedTags.includes(tag);
-              return (
-                <button
-                  type="button"
-                  key={tag}
-                  onClick={() => toggleTag(tag)}
-                  className={`text-xs px-3 py-1.5 rounded-chip font-medium border transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-primary text-white border-primary shadow-level-1'
-                      : 'bg-surface text-muted border-border hover:border-primary/40'
-                  }`}
-                >
-                  {tag}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Comment textarea */}
-        <div>
-          <label className="text-xs font-bold text-text uppercase tracking-wider block mb-1.5">
-            Your Comment / Feedback
-          </label>
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Tell us about the hygiene, stylist skill, and zero-wait experience..."
-            rows={3}
-            className="w-full p-3 rounded-input border border-border bg-surface text-text text-xs focus:border-primary outline-none resize-none leading-relaxed"
-            required
-          />
-        </div>
-
-        <Button type="submit" variant="primary" size="lg" fullWidth disabled={isLoading} className="mt-2 font-extrabold">
-          {isLoading ? 'Submitting Review...' : 'Submit Review'}
-        </Button>
-      </form>
+    <Sheet isOpen={isOpen} onClose={onClose} title="Service Feedback & Rating">
+      <div className="pb-6">
+        <ServiceReviewRatingCard
+          booking={booking}
+          onReviewSubmitted={onReviewSubmitted}
+          onCloseModal={onClose}
+          isModalMode={true}
+        />
+      </div>
     </Sheet>
   );
 };

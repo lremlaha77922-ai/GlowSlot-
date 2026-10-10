@@ -4,13 +4,14 @@ import { Booking } from '../../../types';
 import { mockCoupons } from '../../../data/mockCoupons';
 
 describe('Booking Service Cancellation & Refund Rules (PRD.md section 5)', () => {
+  const futureDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const baseBooking: Booking = {
     id: 'GS-TEST-1',
     type: 'salon',
     salonName: 'Test Salon',
     services: [{ name: 'Haircut', durationMin: 30, price: 24900, qty: 1 }],
     slot: {
-      date: '2026-10-10',
+      date: futureDate,
       time: '14:00',
     },
     subtotalPaise: 24900,
@@ -71,5 +72,36 @@ describe('Booking Service Cancellation & Refund Rules (PRD.md section 5)', () =>
 
     const expired = mockCoupons.find((c) => c.code === 'EXPIRED20');
     expect(expired?.isExpired).toBe(true);
+  });
+
+  it('rejects reviews on bookings that are not completed', async () => {
+    // GS-2026-88102 status is 'upcoming'
+    const res = await bookingService.addReview('GS-2026-88102', {
+      rating: 5,
+      tags: ['Expert Stylist'],
+      text: 'Great haircut',
+      submittedAt: new Date().toISOString(),
+    });
+    expect(res.success).toBe(false);
+    expect(res.error).toContain('completed appointments');
+  });
+
+  it('successfully adds and persists review on a completed booking', async () => {
+    const completedBookingId = 'GS-2026-72419'; // completed mock booking
+    const reviewData = {
+      rating: 5,
+      tags: ['Punctual & Zero Wait', 'Expert Stylist'],
+      text: 'Brilliant fade haircut, zero waiting time!',
+      submittedAt: new Date().toISOString(),
+    };
+
+    const res = await bookingService.addReview(completedBookingId, reviewData);
+    expect(res.success).toBe(true);
+
+    const updatedBooking = await bookingService.getBookingById(completedBookingId);
+    expect(updatedBooking?.review).toBeDefined();
+    expect(updatedBooking?.review?.rating).toBe(5);
+    expect(updatedBooking?.review?.text).toBe('Brilliant fade haircut, zero waiting time!');
+    expect(updatedBooking?.review?.tags).toContain('Expert Stylist');
   });
 });

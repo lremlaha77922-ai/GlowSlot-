@@ -3,19 +3,17 @@ import { Salon, SlotItem } from '../../../types';
 import { getNext7Days } from '../../../data/mockData';
 import { slotService } from '../services/slotService';
 import { DatePickerSheet } from '../components/DatePickerSheet';
+import { CalendarSlotAvailability, CalendarViewMode } from '../components/CalendarSlotAvailability';
+import { SlotSummaryModal } from '../components/SlotSummaryModal';
 import { formatMoney } from '../../../utils/money';
 import { Button } from '../../../components/Button';
-import { Skeleton } from '../../../components/Skeleton';
 import { useSessionStore } from '../../../store/useSessionStore';
 import {
   ArrowLeft,
   Calendar,
   Clock,
-  Sparkles,
-  Check,
-  Lock,
   Timer,
-  Info,
+  LayoutGrid,
 } from 'lucide-react';
 import { useUIStore } from '../../../store/useUIStore';
 
@@ -39,10 +37,10 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
 }) => {
   const dates = getNext7Days();
   const [selectedDate, setSelectedDate] = useState(dates[0].dateStr);
-  const [slots, setSlots] = useState<SlotItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState<SlotItem | null>(null);
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [calendarMode, setCalendarMode] = useState<CalendarViewMode>('day');
   const { user } = useSessionStore();
 
   // 5-minute hold timer state follows held_until from server
@@ -50,33 +48,17 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
 
   const { showToast } = useUIStore();
 
-  const fetchSlots = async () => {
-    setIsLoading(true);
-    const items = await slotService.listByDay(
-      salon.id,
-      service.id,
-      selectedDate,
-      service.basePrice,
-      user?.id
-    );
-    setSlots(items);
-    setIsLoading(false);
+  // Reset selection on date change
+  const handleDateChange = (newDate: string) => {
+    if (newDate !== selectedDate) {
+      if (selectedSlot) {
+        slotService.release(selectedSlot.id, user?.id);
+      }
+      setSelectedSlot(null);
+      setHoldSecondsRemaining(null);
+      setSelectedDate(newDate);
+    }
   };
-
-  // Fetch slots on date change & subscribe to Realtime channel
-  useEffect(() => {
-    setSelectedSlot(null);
-    setHoldSecondsRemaining(null);
-    fetchSlots();
-
-    const sub = slotService.subscribeToSlots(salon.id, selectedDate, () => {
-      fetchSlots();
-    });
-
-    return () => {
-      sub.unsubscribe();
-    };
-  }, [salon.id, service.id, selectedDate, service.basePrice, user?.id]);
 
   // Hold Countdown effect
   useEffect(() => {
@@ -90,7 +72,6 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
       }
       setSelectedSlot(null);
       setHoldSecondsRemaining(null);
-      fetchSlots();
       return;
     }
 
@@ -116,17 +97,18 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
     const res = await slotService.hold(slot.id, user?.id);
     if (!res.success) {
       showToast(res.error || 'Slot no longer available.');
-      fetchSlots();
       return;
     }
 
     setSelectedSlot(slot);
+    setSelectedDate(slot.date);
     if (res.heldUntil) {
       const diffSecs = Math.max(1, Math.floor((new Date(res.heldUntil).getTime() - Date.now()) / 1000));
       setHoldSecondsRemaining(diffSecs);
     } else {
       setHoldSecondsRemaining(5 * 60);
     }
+    setIsSummaryModalOpen(true);
     showToast(`Slot ${slot.time} reserved for 5 minutes.`);
   };
 
@@ -200,11 +182,11 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
         )}
       </div>
 
-      {/* 7-Days Date Strip per Design.md 8.6 */}
+      {/* Quick 7-Day Date Pill Selector */}
       <div className="px-4 py-3 bg-surface border-b border-border">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold text-text uppercase tracking-wider">
-            Select Date
+            Quick Date Select
           </span>
           <button
             onClick={() => setIsDatePickerOpen(true)}
@@ -221,7 +203,7 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
             return (
               <button
                 key={d.dateStr}
-                onClick={() => setSelectedDate(d.dateStr)}
+                onClick={() => handleDateChange(d.dateStr)}
                 className={`w-[60px] py-2.5 rounded-button flex flex-col items-center justify-center shrink-0 transition-all cursor-pointer select-none ${
                   isSelected
                     ? 'bg-primary text-white shadow-level-1 font-bold'
@@ -244,167 +226,20 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
         </div>
       </div>
 
-      {/* Legend Row per Design.md 8.6 */}
-      <div className="px-4 py-2.5 bg-surface/50 border-b border-border/60">
-        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar text-[11px] text-muted font-medium">
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="w-2.5 h-2.5 rounded-[3px] border border-border bg-surface" />
-            <span>Available</span>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="w-2.5 h-2.5 rounded-[3px] bg-primary-soft border border-primary" />
-            <span>Selected</span>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="w-2.5 h-2.5 rounded-[3px] bg-gradient-to-r from-success to-teal-500" />
-            <span>Free Slot</span>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="w-2.5 h-2.5 rounded-[3px] bg-accent" />
-            <span>Peak</span>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="w-2.5 h-2.5 rounded-[3px] bg-bg border border-border" />
-            <span>Booked</span>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="w-2.5 h-2.5 rounded-[3px] bg-muted/30" />
-            <span>Held</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3-Column Slot Grid per Design.md 8.6 */}
+      {/* Real-Time Interactive Calendar Availability Component with Day / Week View Toggle */}
       <main className="p-4">
-        {isLoading ? (
-          <div className="grid grid-cols-3 gap-2.5">
-            {Array.from({ length: 15 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full" radius="button" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-2.5">
-            {slots.map((slot) => {
-              const isSelected = selectedSlot?.id === slot.id;
-              const isBooked = slot.status === 'booked';
-              const isHeldOthers = slot.status === 'held_by_others';
-              const isFree = slot.isFree;
-              const isPeak = slot.isPeak && !isFree && !isBooked && !isHeldOthers;
-
-              // Accessible Screen Reader announcement per Design.md 11:
-              // "10:30 AM, Rs.60, peak price, available"
-              const accessibilityLabel = `${slot.time}, ${
-                isFree ? 'Free' : formatMoney(slot.price)
-              }, ${isPeak ? 'peak price' : ''}, ${
-                isBooked
-                  ? 'fully booked'
-                  : isHeldOthers
-                  ? 'held by another user'
-                  : isSelected
-                  ? 'selected'
-                  : 'available'
-              }`;
-
-              if (isBooked) {
-                return (
-                  <div
-                    key={slot.id}
-                    className="h-14 min-h-[48px] rounded-button bg-bg border border-border/60 flex flex-col items-center justify-center p-1.5 opacity-50 cursor-not-allowed select-none"
-                    aria-label={accessibilityLabel}
-                    aria-disabled="true"
-                  >
-                    <span className="text-xs font-semibold text-muted line-through">
-                      {slot.time}
-                    </span>
-                    <span className="text-[10px] text-muted">Booked</span>
-                  </div>
-                );
-              }
-
-              if (isHeldOthers) {
-                return (
-                  <div
-                    key={slot.id}
-                    className="h-14 min-h-[48px] rounded-button bg-muted/10 border border-border/60 flex flex-col items-center justify-center p-1.5 cursor-not-allowed select-none"
-                    aria-label={accessibilityLabel}
-                    aria-disabled="true"
-                  >
-                    <div className="flex items-center gap-1 text-muted text-xs font-semibold">
-                      <Lock size={10} />
-                      <span>{slot.time}</span>
-                    </div>
-                    <span className="text-[9px] text-muted mt-0.5">Held</span>
-                  </div>
-                );
-              }
-
-              if (isFree) {
-                return (
-                  <button
-                    key={slot.id}
-                    onClick={() => handleSelectSlot(slot)}
-                    className={`h-14 min-h-[48px] rounded-button p-1.5 flex flex-col items-center justify-center transition-all cursor-pointer relative shadow-sm ${
-                      isSelected
-                        ? 'border-2 border-white ring-2 ring-primary'
-                        : 'border border-success/40 hover:opacity-95'
-                    } gradient-free-slot text-white`}
-                    aria-label={accessibilityLabel}
-                  >
-                    {isSelected && (
-                      <span className="absolute top-1 left-1 bg-white text-success rounded-full p-0.5">
-                        <Check size={9} strokeWidth={3} />
-                      </span>
-                    )}
-                    <span className="text-xs font-bold leading-none">{slot.time}</span>
-                    <span className="text-[10px] font-extrabold uppercase mt-1 tracking-wider bg-white/20 px-1.5 py-0.5 rounded-chip">
-                      Free Slot
-                    </span>
-                  </button>
-                );
-              }
-
-              return (
-                <button
-                  key={slot.id}
-                  onClick={() => handleSelectSlot(slot)}
-                  className={`h-14 min-h-[48px] rounded-button p-1.5 flex flex-col items-center justify-center transition-all cursor-pointer relative ${
-                    isSelected
-                      ? 'bg-primary-soft border-2 border-primary shadow-xs'
-                      : 'bg-surface border border-border shadow-xs hover:border-primary/50'
-                  }`}
-                  aria-label={accessibilityLabel}
-                >
-                  {isSelected && (
-                    <span className="absolute top-1 left-1 bg-primary text-white rounded-full p-0.5">
-                      <Check size={9} strokeWidth={3} />
-                    </span>
-                  )}
-                  <span
-                    className={`text-xs font-bold leading-none ${
-                      isSelected ? 'text-primary' : 'text-text'
-                    }`}
-                  >
-                    {slot.time}
-                  </span>
-
-                  {isPeak ? (
-                    <span className="text-[10px] font-bold text-white bg-accent px-1.5 py-0.5 rounded-[4px] mt-1 tabular-nums">
-                      {formatMoney(slot.price)}
-                    </span>
-                  ) : (
-                    <span
-                      className={`text-[11px] font-semibold mt-1 tabular-nums ${
-                        isSelected ? 'text-primary' : 'text-muted'
-                      }`}
-                    >
-                      {formatMoney(slot.price)}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <CalendarSlotAvailability
+          salonId={salon.id}
+          serviceId={service.id}
+          serviceName={service.name}
+          basePricePaise={service.basePrice}
+          userId={user?.id}
+          selectedSlot={selectedSlot}
+          onSelectSlot={handleSelectSlot}
+          initialDate={selectedDate}
+          initialMode={calendarMode}
+          onDateChange={handleDateChange}
+        />
       </main>
 
       {/* Bottom Sticky Continue Bar per Design.md 8.6 */}
@@ -429,13 +264,35 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
           disabled={!selectedSlot}
           onClick={() => {
             if (selectedSlot) {
-              onContinue(selectedSlot, salon, service);
+              setIsSummaryModalOpen(true);
             }
           }}
         >
-          Continue
+          Review & Continue
         </Button>
       </div>
+
+      {/* Appointment Slot Summary Modal */}
+      <SlotSummaryModal
+        isOpen={isSummaryModalOpen}
+        onClose={() => setIsSummaryModalOpen(false)}
+        salon={salon}
+        service={service}
+        slot={selectedSlot}
+        holdSecondsRemaining={holdSecondsRemaining}
+        customerDetails={{
+          name: user?.name,
+          phone: user?.phone,
+          email: user?.email,
+        }}
+        onConfirm={(slotToConfirm, salonToConfirm, serviceToConfirm) => {
+          setIsSummaryModalOpen(false);
+          onContinue(slotToConfirm, salonToConfirm, serviceToConfirm);
+        }}
+        onSelectDifferentSlot={() => {
+          setIsSummaryModalOpen(false);
+        }}
+      />
 
       {/* O03 Date Picker Sheet */}
       <DatePickerSheet
@@ -443,7 +300,7 @@ export const SlotPickerScreen: React.FC<SlotPickerScreenProps> = ({
         onClose={() => setIsDatePickerOpen(false)}
         dates={dates}
         selectedDate={selectedDate}
-        onSelectDate={(newDate) => setSelectedDate(newDate)}
+        onSelectDate={(newDate) => handleDateChange(newDate)}
       />
     </div>
   );

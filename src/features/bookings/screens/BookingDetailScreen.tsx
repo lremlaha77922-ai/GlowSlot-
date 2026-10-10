@@ -5,6 +5,7 @@ import { formatMoney } from '../../../utils/money';
 import { Button } from '../../../components/Button';
 import { CancelBookingSheet } from '../components/CancelBookingSheet';
 import { WriteReviewModal } from '../components/WriteReviewModal';
+import { ServiceReviewRatingCard } from '../components/ServiceReviewRatingCard';
 import {
   ArrowLeft,
   Calendar,
@@ -355,6 +356,16 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
             </button>
           )}
         </div>
+
+        {/* Customer Service Review & Rating Section for Completed Appointments */}
+        {booking.status === 'completed' && (
+          <ServiceReviewRatingCard
+            booking={booking}
+            onReviewSubmitted={(updated) => {
+              setBooking(updated);
+            }}
+          />
+        )}
 
         {/* Action Buttons Suite according to state */}
         <div className="flex flex-col gap-2.5 pt-2">

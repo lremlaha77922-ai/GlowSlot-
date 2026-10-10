@@ -9,6 +9,17 @@ export interface ReferralItem {
   date: string;
 }
 
+export interface LeaderboardReferrer {
+  rank: number;
+  userId: string;
+  name: string;
+  referralCode: string;
+  completedReferrals: number;
+  totalPointsEarned: number;
+  tierBadge: string;
+  avatarUrl?: string;
+}
+
 export const referralService = {
   async getReferralStats(userId?: string): Promise<{
     totalReferrals: number;
@@ -119,5 +130,91 @@ export const referralService = {
       }
     }
     return { success: true };
+  },
+
+  async getTopReferrers(limit: number = 5): Promise<LeaderboardReferrer[]> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data, error } = await supabase
+          .from('referral_leaderboard')
+          .select('*')
+          .order('completed_referrals', { ascending: false })
+          .limit(limit);
+
+        if (!error && data && data.length > 0) {
+          return data.map((item: any, idx: number) => ({
+            rank: idx + 1,
+            userId: item.user_id || `user-${idx + 1}`,
+            name: item.user_name || 'Community Member',
+            referralCode: item.referral_code || `GLOW-VIP${idx + 1}`,
+            completedReferrals: item.completed_referrals || 0,
+            totalPointsEarned: item.total_points || (item.completed_referrals || 0) * 100,
+            tierBadge:
+              idx === 0
+                ? 'Diamond Champion'
+                : idx === 1
+                ? 'Platinum Influencer'
+                : idx === 2
+                ? 'Gold Ambassador'
+                : idx === 3
+                ? 'Silver Star'
+                : 'Rising Advocate',
+          }));
+        }
+      } catch {
+        // Fallback to community mock data
+      }
+    }
+
+    // Community mock leaderboard (top 5 GlowSlot referrers)
+    const communityTopReferrers: LeaderboardReferrer[] = [
+      {
+        rank: 1,
+        userId: 'top-1',
+        name: 'Ananya Verma',
+        referralCode: 'GLOW-ANAN100',
+        completedReferrals: 28,
+        totalPointsEarned: 2800,
+        tierBadge: 'Diamond Champion',
+      },
+      {
+        rank: 2,
+        userId: 'top-2',
+        name: 'Rohan Mehta',
+        referralCode: 'GLOW-ROHA100',
+        completedReferrals: 21,
+        totalPointsEarned: 2100,
+        tierBadge: 'Platinum Influencer',
+      },
+      {
+        rank: 3,
+        userId: 'top-3',
+        name: 'Sneha Kapoor',
+        referralCode: 'GLOW-SNEH100',
+        completedReferrals: 17,
+        totalPointsEarned: 1700,
+        tierBadge: 'Gold Ambassador',
+      },
+      {
+        rank: 4,
+        userId: 'top-4',
+        name: 'Arjun Patel',
+        referralCode: 'GLOW-ARJU100',
+        completedReferrals: 12,
+        totalPointsEarned: 1200,
+        tierBadge: 'Silver Star',
+      },
+      {
+        rank: 5,
+        userId: 'top-5',
+        name: 'Pooja Nair',
+        referralCode: 'GLOW-POOJ100',
+        completedReferrals: 9,
+        totalPointsEarned: 900,
+        tierBadge: 'Rising Advocate',
+      },
+    ];
+
+    return communityTopReferrers.slice(0, limit);
   }
 };

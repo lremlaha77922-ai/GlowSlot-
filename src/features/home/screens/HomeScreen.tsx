@@ -7,6 +7,7 @@ import { SalonDiscoverySections } from '../components/SalonDiscoverySections';
 import { PromotionalReelsSection } from '../components/PromotionalReelsSection';
 import { PopularSalonsSection } from '../components/PopularSalonsSection';
 import { ReferralCard } from '../components/ReferralCard';
+import { SmartRecommendationsSection } from '../components/SmartRecommendationsSection';
 import { PullToRefresh } from '../../../components/PullToRefresh';
 import { useUIStore } from '../../../store/useUIStore';
 import { festivalBanners, discountBanners, mockQuickServices, mockSalons } from '../../../data/mockData';
@@ -53,6 +54,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         {/* SECTION 1 — Festival Offers Carousel */}
         <PromoCarousel sectionTitle="Festival Offers" banners={festivalBanners} />
+
+        {/* AI-Powered Smart Recommendations (History & Trending Styles) */}
+        <SmartRecommendationsSection
+          onSelectSalon={onSelectSalon}
+          onBookNow={onBookNowModal}
+        />
 
         {/* Quick Services Section */}
         <QuickServicesSection services={mockQuickServices} onSelectSalon={onSelectSalon} />

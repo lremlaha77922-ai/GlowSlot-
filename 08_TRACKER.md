@@ -97,7 +97,7 @@ Last updated: 2026-10-02  |  Current phase: **Phase 6B (DONE)**  |  Prompts: `12
 | 4C.4 | S24 Saved Addresses | DONE | Address list with add/edit/delete, reuses S07 modal |
 | 4C.5 | S25 Favourite Salons | DONE | List of bookmarked salons, links to S04 Salon Detail |
 | 4C.6 | S26 Wallet & Points | DONE | Points balance, conversion banner, transaction history |
-| 4C.7 | S27 Refer & Earn | DONE | Referral code, copy trigger, O10 native share, Have a Code card (REF-5) |
+| 4C.7 | S27 Refer & Earn | DONE | Referral code, copy trigger, O10 native share, Have a Code card (REF-5), ReferralLeaderboard (Top 5 community referrers) |
 | 4C.8 | S28 Settings | DONE | O07 Language picker, dark mode switch, notification toggles |
 | 4C.9 | S29 & S30 Support & Legal | DONE | S29 Help & FAQ accordion, S30 Terms of Service & Privacy Policy |
 | 4C.10 | Dialogs & Home Wiring | DONE | O07, O08, O09, O10; Home bell, avatar, points, refer wired |
@@ -170,6 +170,11 @@ Last updated: 2026-10-02  |  Current phase: **Phase 6B (DONE)**  |  Prompts: `12
 |---|---|---|---|
 | 6C.1 | CancellationPolicyModal | DONE | Modal with dynamic booking data, 80%/0% rules, Keep Booking & Cancel & Refund action buttons |
 | 6C.2 | LoyaltyPointsTracker | DONE | Component displaying user salon points balance & visual progress bar to next discount tier |
+| 6C.3 | AI Smart Recommendation System | DONE | Server-side Gemini 3.8 Flash route + client SmartRecommendationsSection on Home |
+| 6C.4 | Service Review & Rating Component | DONE | ServiceReviewRatingCard & WriteReviewModal for rating & feedback on completed appointments |
+| 6C.5 | Referral Dashboard Component | DONE | Reusable ReferralDashboard with unique invite link generator, copy/share CTAs, bonus loyalty points tracking, and milestone boosters |
+| 6C.6 | Calendar View Component | DONE | Real-time slot availability calendar with Day and Week view toggles, 7-day overview, time filters, and dynamic pricing indicators |
+| 6C.7 | Time Slot Summary Modal | DONE | Summary modal appearing on slot selection allowing review of salon service, schedule, dynamic pricing breakdown, notes, and booking confirmation |
 
 ---
 
