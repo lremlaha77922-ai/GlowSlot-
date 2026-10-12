@@ -11,7 +11,7 @@ export interface TabItem {
 
 const TABS: TabItem[] = [
   { id: 'home', label: 'Home', icon: Home, isCurrentPhase: true },
-  { id: 'bookings', label: 'Appointments', icon: Calendar, isCurrentPhase: true },
+  { id: 'bookings', label: 'My Bookings', icon: Calendar, isCurrentPhase: true },
   { id: 'rewards', label: 'Rewards', icon: Gift, isCurrentPhase: true },
   { id: 'favouriteSalons', label: 'Favorites', icon: Heart, isCurrentPhase: true },
   { id: 'profile', label: 'Profile', icon: User, isCurrentPhase: true },

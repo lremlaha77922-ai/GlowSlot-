@@ -40,6 +40,7 @@ import { mockSalons } from '../data/mockData';
 import { bookingService } from '../features/bookings/services/bookingService';
 import { authService } from '../features/auth/services/authService';
 import { referralService } from '../features/profile/services/referralService';
+import { notificationReminderService, AppointmentReminder } from '../services/notificationReminderService';
 import { App as CapacitorApp } from '@capacitor/app';
 
 type ViewMode =
@@ -87,10 +88,16 @@ export const AppShell: React.FC = () => {
   const [reschedulingBooking, setReschedulingBooking] = useState<Booking | null>(null);
   const [bookingModalSalon, setBookingModalSalon] = useState<Salon | null>(null);
   const [bookingModalInitialServiceIds, setBookingModalInitialServiceIds] = useState<string[] | undefined>(undefined);
+  const [bookingModalInitialSpecialistId, setBookingModalInitialSpecialistId] = useState<string | undefined>(undefined);
 
-  const handleOpenBookModal = (salon: Salon, initialSelectedServiceIds?: string[]) => {
+  const handleOpenBookModal = (
+    salon: Salon,
+    initialSelectedServiceIds?: string[],
+    initialSelectedSpecialistId?: string
+  ) => {
     setBookingModalSalon(salon);
     setBookingModalInitialServiceIds(initialSelectedServiceIds);
+    setBookingModalInitialSpecialistId(initialSelectedSpecialistId);
   };
 
   const [bookingSummaryContext, setBookingSummaryContext] = useState<{
@@ -155,6 +162,56 @@ export const AppShell: React.FC = () => {
     service: { id: string; name: string; durationMin: number; basePrice: number };
   } | null>(null);
 
+  const [loginInitialMode, setLoginInitialMode] = useState<'login' | 'signup'>('login');
+  const [activeReminder, setActiveReminder] = useState<AppointmentReminder | null>(null);
+
+  // 2-Hour Appointment Reminder Scanner Effect
+  useEffect(() => {
+    let reminderTimer: any;
+
+    const checkReminders = async () => {
+      try {
+        const reminders = await notificationReminderService.evaluateUpcomingReminders(user?.id);
+        if (reminders.length > 0) {
+          const firstReminder = reminders[0];
+          setActiveReminder(firstReminder);
+
+          // 1. Show interactive in-app toast with "View" CTA
+          showToast(firstReminder.message, {
+            type: 'info',
+            actionLabel: 'View Details',
+            onAction: () => {
+              setSelectedBookingId(firstReminder.bookingId);
+              setCurrentView('bookingDetail');
+            },
+          });
+
+          // 2. Trigger native push notification if permission granted
+          notificationReminderService.showSystemNotification(
+            `Nexora Salon Reminder: ${firstReminder.salonName}`,
+            {
+              body: `Your appointment is starting soon (${firstReminder.slotTime})! Tap to view details.`,
+              tag: `booking-reminder-${firstReminder.bookingId}`,
+            }
+          );
+
+          // Mark as notified in storage to prevent re-firing
+          notificationReminderService.markReminderSent(firstReminder.bookingId, '2h');
+        }
+      } catch (err) {
+        console.warn('[AppShell] Reminder check failed:', err);
+      }
+    };
+
+    // Run immediately on mount / user change, then every 60 seconds
+    checkReminders();
+    reminderTimer = setInterval(checkReminders, 60 * 1000);
+
+    return () => {
+      if (reminderTimer) clearInterval(reminderTimer);
+    };
+  }, [user?.id, showToast]);
+
   useEffect(() => {
     // Check initial route
     const path = window.location.pathname;
@@ -165,21 +222,29 @@ export const AppShell: React.FC = () => {
       setReferralCode(refCode.toUpperCase());
     }
 
-    if (path === '/invite' || path === '/signup') {
+    if (path === '/invite') {
       if (user) {
         showToast('You are already signed in.');
         setCurrentView('tabs');
       } else {
         setCurrentView('invite');
       }
+    } else if (path === '/signup') {
+      if (user) {
+        showToast('You are already signed in.');
+        setCurrentView('tabs');
+      } else {
+        setLoginInitialMode('signup');
+        setCurrentView('login');
+      }
     }
-  }, [user, setReferralCode]);
+  }, [user, setReferralCode, showToast]);
 
   useEffect(() => {
     const applyReferral = async () => {
       const code = getReferralCode();
       if (user && code) {
-        console.log('[GlowSlot] Applying referral code:', code);
+        console.log('[Nexora] Applying referral code:', code);
         await referralService.applyReferral(code);
         setReferralCode(null);
       }
@@ -281,7 +346,7 @@ export const AppShell: React.FC = () => {
   }) => {
     const atHomeSalon: Salon = {
       id: 'athome-pro',
-      name: 'GlowSlot At-Home Pro',
+      name: 'Nexora At-Home Pro',
       area: 'Doorstep Service',
       city: 'Bengaluru',
       address: 'Delivered to your saved address',
@@ -396,6 +461,7 @@ export const AppShell: React.FC = () => {
 
         {currentView === 'login' && (
           <LoginScreen
+            initialMode={loginInitialMode}
             onSuccess={() => handlePostAuthNavigate()}
             onContinueAsGuest={() => setCurrentView('tabs')}
           />
@@ -404,10 +470,21 @@ export const AppShell: React.FC = () => {
         {currentView === 'invite' && (
           <InviteLandingScreen
             onJoin={(code) => {
-              // Navigate to signup with referral
-              window.location.href = `/signup?ref=${code}`;
+              if (code) {
+                setReferralCode(code.toUpperCase());
+                try {
+                  window.history.pushState({}, '', `/onboarding?ref=${encodeURIComponent(code)}`);
+                } catch {
+                  // ignore
+                }
+              }
+              // Redirect to onboarding flow while preserving attribution
+              setCurrentView('onboarding');
             }}
-            onSignIn={() => setCurrentView('login')}
+            onSignIn={() => {
+              setLoginInitialMode('login');
+              setCurrentView('login');
+            }}
           />
         )}
 
@@ -629,6 +706,12 @@ export const AppShell: React.FC = () => {
                   onOpenProfile={() => setActiveTab('profile')}
                   onOpenPoints={() => setActiveTab('rewards')}
                   onOpenRefer={() => setCurrentView('referEarn')}
+                  activeReminder={activeReminder}
+                  onSelectBooking={(id) => {
+                    setSelectedBookingId(id);
+                    setCurrentView('bookingDetail');
+                  }}
+                  onDismissReminder={() => setActiveReminder(null)}
                 />
               )}
 
@@ -648,7 +731,7 @@ export const AppShell: React.FC = () => {
                   }}
                   onReschedule={handleStartReschedule}
                   onRebook={handleRebook}
-                  onExploreSalons={() => setActiveTab('search')}
+                  onExploreSalons={() => setActiveTab('home')}
                 />
               )}
 
@@ -697,9 +780,11 @@ export const AppShell: React.FC = () => {
             onClose={() => {
               setBookingModalSalon(null);
               setBookingModalInitialServiceIds(undefined);
+              setBookingModalInitialSpecialistId(undefined);
             }}
             salon={bookingModalSalon}
             initialSelectedServiceIds={bookingModalInitialServiceIds}
+            initialSelectedSpecialistId={bookingModalInitialSpecialistId}
             onContinue={handleBookModalContinue}
             onConfirmBooking={handleConfirmBooking}
           />

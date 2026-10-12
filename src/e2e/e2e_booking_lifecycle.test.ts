@@ -57,8 +57,8 @@ describe('E2E Integration Test: User Lifecycle & Booking Journey (P6A)', () => {
     expect(services.length).toBeGreaterThan(0);
     const serviceId = services[0].id;
 
-    // Step 3: Select and hold slot for 5 minutes
-    const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    // Step 3: Select and hold slot for 5 minutes (48h ahead to ensure >24h refund policy)
+    const futureDate = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString().split('T')[0];
     const slots = await slotService.getSlots(salonId, serviceId, futureDate, 14900, userId);
     expect(slots.length).toBeGreaterThan(0);
 

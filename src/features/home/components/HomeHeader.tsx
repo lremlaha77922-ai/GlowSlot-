@@ -83,9 +83,17 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           className="flex items-center gap-2 text-left cursor-pointer group"
           aria-label="Open profile"
         >
-          <div className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shadow-xs group-hover:brightness-105">
-            {user?.name ? user.name.charAt(0).toUpperCase() : 'G'}
-          </div>
+          {user?.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt={user.name || 'User'}
+              className="w-8 h-8 rounded-full object-cover shrink-0 shadow-xs border border-primary/50 group-hover:brightness-105"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shadow-xs group-hover:brightness-105">
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'G'}
+            </div>
+          )}
           <div>
             <p className="text-xs text-muted font-medium">Hello, {user?.name || 'Guest'} 👋</p>
             <span className="text-[10px] text-primary font-bold group-hover:underline">View Profile</span>

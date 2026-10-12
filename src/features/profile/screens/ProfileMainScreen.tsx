@@ -17,6 +17,7 @@ import {
   LogOut,
   Trash2,
   Edit2,
+  Camera,
   ShieldCheck,
   Calendar,
 } from 'lucide-react';
@@ -88,13 +89,33 @@ export const ProfileMainScreen: React.FC<ProfileMainScreenProps> = ({
         {/* User Card */}
         <div className="bg-surface rounded-card border border-border/80 shadow-level-1 p-4 flex items-center justify-between">
           <div className="flex items-center gap-3.5">
-            <div className="w-14 h-14 rounded-full bg-primary text-white text-xl font-bold flex items-center justify-center shrink-0 shadow-xs">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'G'}
+            <div className="relative">
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name || 'User'}
+                  className="w-14 h-14 rounded-full object-cover shrink-0 shadow-xs border-2 border-primary"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-primary text-white text-xl font-bold flex items-center justify-center shrink-0 shadow-xs">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'G'}
+                </div>
+              )}
+              {!isGuest && (
+                <button
+                  onClick={onEditProfile}
+                  className="absolute -bottom-1 -right-1 p-1 rounded-full bg-accent text-white shadow-xs hover:brightness-110 cursor-pointer"
+                  aria-label="Upload or edit photo"
+                  title="Upload / Change Photo"
+                >
+                  <Camera size={11} />
+                </button>
+              )}
             </div>
 
             <div>
               <h2 className="text-base font-bold text-text">
-                {user?.name || (isGuest ? 'Guest User' : 'GlowSlot Member')}
+                {user?.name || (isGuest ? 'Guest User' : 'Nexora Member')}
               </h2>
               <span className="text-xs text-muted font-mono block mt-0.5">
                 {user?.phone || 'Browse Mode'}
@@ -107,6 +128,7 @@ export const ProfileMainScreen: React.FC<ProfileMainScreenProps> = ({
               onClick={onEditProfile}
               className="p-2 rounded-full text-muted hover:text-primary hover:bg-primary-soft transition-colors cursor-pointer"
               aria-label="Edit Profile"
+              title="Edit Profile"
             >
               <Edit2 size={16} />
             </button>
@@ -260,7 +282,7 @@ export const ProfileMainScreen: React.FC<ProfileMainScreenProps> = ({
 
         <div className="text-center pt-2">
           <span className="text-[10px] text-muted font-mono">
-            GlowSlot v0.1.0 • Phase 4C
+            Nexora v0.1.0 • Phase 4C
           </span>
         </div>
       </main>

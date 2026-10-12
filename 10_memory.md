@@ -1,4 +1,4 @@
-# 10_memory.md: GlowSlot Project Memory
+# 10_memory.md: Nexora Project Memory
 
 Context file for AI sessions. Read this first, then `08_TRACKER.md`. Update it at the end of every phase. Keep it short and current; delete outdated lines instead of piling up history.
 
@@ -8,7 +8,7 @@ Last updated: 2026-10-02  |  Current phase: **Phase 0 (DONE)**
 
 ## 1. Project in One Paragraph
 
-GlowSlot is an original Android salon booking app for India. Users book at-salon and at-home grooming, pick time slots with time-based pricing (cheaper off-peak, free-offer slots), and buy grooming products. Built with React + TypeScript + Tailwind, packaged for Android with Capacitor, backend is **Supabase only**. Inspired only by general marketplace functionality; no names, logos, taglines or assets from any existing app.
+Nexora is an original Android salon booking app for India. Users book at-salon and at-home grooming, pick time slots with time-based pricing (cheaper off-peak, free-offer slots), and buy grooming products. Built with React + TypeScript + Tailwind, packaged for Android with Capacitor, backend is **Supabase only**. Inspired only by general marketplace functionality; no names, logos, taglines or assets from any existing app.
 
 ---
 
@@ -30,7 +30,7 @@ GlowSlot is an original Android salon booking app for India. Users book at-salon
 | Item | Value |
 |---|---|
 | Phase | Auth Migration (Email + Password) - DONE |
-| Last completed task | Referral Leaderboard Component (ReferralLeaderboard displaying top 5 community referrers with podium ranks, tier badges, gamified monthly/all-time tabs, user standing card, and share CTA) |
+| Last completed task | Profile Photo Upload & Persistent Avatar (EditProfileScreen & storageService: file format/size validation, preview with Save/Cancel, Supabase Storage & local persistence, and global avatar display in Profile & Header) |
 | Next task | Maintenance / Feature updates |
 | Known blockers | None |
 | Known bugs | None |

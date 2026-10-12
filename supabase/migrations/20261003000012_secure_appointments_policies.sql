@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Secure Appointments RLS Policies SQL Migration
+-- Nexora Secure Appointments RLS Policies SQL Migration
 -- ====================================================================
 
 -- 1. Enable Row Level Security (RLS) on bookings and booking_items tables

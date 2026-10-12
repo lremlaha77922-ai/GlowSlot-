@@ -138,7 +138,7 @@ export const ReferralLeaderboard: React.FC<ReferralLeaderboardProps> = ({
                 community
               </span>
             </h3>
-            <p className="text-[11px] text-muted">GlowSlot's top community champions</p>
+            <p className="text-[11px] text-muted">Nexora's top community champions</p>
           </div>
         </div>
 

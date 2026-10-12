@@ -38,7 +38,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
         {/* Admin Overview Notice */}
         <div className="bg-surface rounded-card border border-border/80 p-4 shadow-level-1 flex items-center justify-between">
           <div>
-            <h2 className="text-xs font-bold text-text">GlowSlot System & Automation Control</h2>
+            <h2 className="text-xs font-bold text-text">Nexora System & Automation Control</h2>
             <p className="text-[11px] text-muted mt-0.5">Real-time status of booking re-engagement, retention campaigns, and platform operations.</p>
           </div>
           <BarChart2 size={24} className="text-primary/60 shrink-0 hidden sm:block" />

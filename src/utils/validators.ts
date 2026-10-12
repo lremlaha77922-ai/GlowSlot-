@@ -1,5 +1,5 @@
 /**
- * Validation utilities for GlowSlot
+ * Validation utilities for Nexora
  */
 
 export const validateIndianPhone = (phone: string): boolean => {

@@ -1,6 +1,6 @@
-# GlowSlot
+# Nexora
 
-GlowSlot is an original salon & grooming booking application for India, featuring smart time-based slot pricing, at-salon and at-home grooming services, and products.
+Nexora is an original salon & grooming booking application for India, featuring smart time-based slot pricing, at-salon and at-home grooming services, and products.
 
 ---
 

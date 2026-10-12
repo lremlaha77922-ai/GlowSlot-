@@ -1,4 +1,4 @@
-# 08_TRACKER.md: GlowSlot Progress Tracker
+# 08_TRACKER.md: Nexora Progress Tracker
 
 Update after every task. Status values: `TODO`, `DOING`, `DONE`, `BLOCKED`.
 Last updated: 2026-10-02  |  Current phase: **Phase 6B (DONE)**  |  Prompts: `12_PHASE_PROMPTS.md`
@@ -158,7 +158,7 @@ Last updated: 2026-10-02  |  Current phase: **Phase 6B (DONE)**  |  Prompts: `12
 | ID | Task | Status | Notes |
 |---|---|---|---|
 | 6B.1 | Capacitor core & plugins | DONE | Installed @capacitor/core, android, geolocation, share, app |
-| 6B.2 | capacitor.config.json | DONE | appId: com.glowslot.app, appName: GlowSlot |
+| 6B.2 | capacitor.config.json | DONE | appId: com.glowslot.app, appName: Nexora |
 | 6B.3 | Hardware back button & safe area | DONE | CapacitorApp backButton listener, viewport-fit=cover |
 | 6B.4 | Location rationale & Native share | DONE | LocationSheet rationale banner, ReferEarn native share |
 | 6B.5 | README & Keystore security | DONE | Android build guide, keystore ignored in .gitignore |
@@ -175,6 +175,10 @@ Last updated: 2026-10-02  |  Current phase: **Phase 6B (DONE)**  |  Prompts: `12
 | 6C.5 | Referral Dashboard Component | DONE | Reusable ReferralDashboard with unique invite link generator, copy/share CTAs, bonus loyalty points tracking, and milestone boosters |
 | 6C.6 | Calendar View Component | DONE | Real-time slot availability calendar with Day and Week view toggles, 7-day overview, time filters, and dynamic pricing indicators |
 | 6C.7 | Time Slot Summary Modal | DONE | Summary modal appearing on slot selection allowing review of salon service, schedule, dynamic pricing breakdown, notes, and booking confirmation |
+| 6C.8 | 2-Hour Appointment Reminder System | DONE | Push notification & in-app toast reminder with banner alert notifying users 2 hours before appointments |
+| 6C.9 | Refer-a-Friend Loyalty Points on First Booking | DONE | Automatically awards loyalty points to referrer when referred friend completes their first booking |
+| 6C.10 | Meet Our Stylists Section & Profiles | DONE | Interactive stylist profiles, specializations, real-time availability slots, and direct booking integration |
+| 6C.11 | My Bookings Tab & Historical Salon Visit Log | DONE | Upcoming appointments and historical log of completed salon visits with status indicators (Confirmed, Completed, Cancelled) and filter segments |
 
 ---
 

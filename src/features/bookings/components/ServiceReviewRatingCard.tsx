@@ -4,6 +4,7 @@ import { bookingService } from '../services/bookingService';
 import { useSessionStore } from '../../../store/useSessionStore';
 import { useUIStore } from '../../../store/useUIStore';
 import { Button } from '../../../components/Button';
+import { StarRating } from '../../../components/StarRating';
 import {
   Star,
   CheckCircle2,

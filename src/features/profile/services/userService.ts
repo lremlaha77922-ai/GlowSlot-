@@ -17,7 +17,7 @@ export const userService = {
             title: t.description || 'Glow Points Adjustment',
             description: t.description || 'Glow Points Adjustment',
             rewardType: t.type === 'booking_reward' ? 'booking' : t.type === 'signup_bonus' ? 'signup_bonus' : t.type,
-            salonName: t.salon_name || 'GlowSlot Salon Partner',
+            salonName: t.salon_name || 'Nexora Salon Partner',
             points: Number(t.points),
             type: t.type as PointsTransaction['type'],
             date: new Date(t.created_at).toLocaleDateString('en-IN', {
@@ -62,7 +62,7 @@ export const userService = {
         title: 'Referral Bonus (Rahul K.)',
         description: 'Friend completed their first salon appointment.',
         rewardType: 'referral',
-        salonName: 'GlowSlot Network',
+        salonName: 'Nexora Network',
         date: '1 Oct 2026',
         points: 100,
         status: 'completed',
@@ -94,9 +94,9 @@ export const userService = {
       {
         id: 'tx-6',
         title: 'Welcome Bonus on Signup',
-        description: 'GlowSlot new user registration bonus.',
+        description: 'Nexora new user registration bonus.',
         rewardType: 'signup_bonus',
-        salonName: 'GlowSlot Platform',
+        salonName: 'Nexora Platform',
         date: '15 Sep 2026',
         points: 100,
         status: 'expired',
@@ -247,15 +247,33 @@ export const userService = {
     };
   },
 
+  async awardBookingReward(userId: string, bookingId: string, points: number, salonName: string): Promise<boolean> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { data } = await supabase.rpc('earn_booking_reward', {
+          p_user_id: userId,
+          p_booking_id: bookingId,
+          p_points: points,
+          p_salon_name: salonName,
+        });
+        return !!data;
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  },
+
   async earnReferralReward(referrerId: string, refereeId: string, points: number): Promise<boolean> {
     if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
       try {
-        const { data } = await supabase.rpc('earn_referral_reward', {
+        const { data, error } = await supabase.rpc('earn_referral_reward', {
           p_referrer_id: referrerId,
           p_referee_id: refereeId,
           p_points: points,
         });
-        return !!data;
+        if (!error && data) return true;
+        return false;
       } catch {
         return false;
       }

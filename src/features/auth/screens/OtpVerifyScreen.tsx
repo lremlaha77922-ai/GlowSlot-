@@ -22,7 +22,7 @@ export const OtpVerifyScreen: React.FC<OtpVerifyScreenProps> = ({ onBack }) => {
 
       <div className="text-center py-12 flex flex-col items-center gap-3">
         <p className="text-sm font-medium text-muted max-w-xs">
-          GlowSlot now uses Email + Password authentication. Phone OTP login has been migrated to Email Authentication.
+          Nexora now uses Email + Password authentication. Phone OTP login has been migrated to Email Authentication.
         </p>
         <Button onClick={onBack} variant="primary" className="mt-4">
           Return to Email Login

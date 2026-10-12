@@ -48,12 +48,12 @@ export const TermsPrivacyScreen: React.FC<TermsPrivacyScreenProps> = ({ onBack }
         <div className="bg-surface rounded-card border border-border shadow-level-1 p-4 flex flex-col gap-3 text-xs leading-relaxed text-muted">
           {tab === 'terms' ? (
             <>
-              <h2 className="text-sm font-bold text-text">GlowSlot Terms of Service</h2>
+              <h2 className="text-sm font-bold text-text">Nexora Terms of Service</h2>
               <p className="text-[11px]">Last updated: October 2026</p>
 
               <h3 className="font-bold text-text pt-2">1. Smart Slot Reservations</h3>
               <p>
-                GlowSlot provides real-time slot scheduling for salons and doorstep grooming. When you hold a slot, a 5-minute reservation timer is granted to complete payment. Unpaid holds expire automatically to ensure fair chair access.
+                Nexora provides real-time slot scheduling for salons and doorstep grooming. When you hold a slot, a 5-minute reservation timer is granted to complete payment. Unpaid holds expire automatically to ensure fair chair access.
               </p>
 
               <h3 className="font-bold text-text pt-2">2. Cancellation & Refunds</h3>

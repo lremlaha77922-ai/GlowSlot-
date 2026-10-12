@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Booking Summary Validation SQL Migration
+-- Nexora Booking Summary Validation SQL Migration
 -- ====================================================================
 
 -- RPC to perform comprehensive server-side pre-booking validation

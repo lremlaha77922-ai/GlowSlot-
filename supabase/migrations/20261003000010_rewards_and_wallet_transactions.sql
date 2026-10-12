@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Secure Rewards & Wallet Transactions SQL Migration
+-- Nexora Secure Rewards & Wallet Transactions SQL Migration
 -- ====================================================================
 
 -- 1. Create wallet_transactions table if not exists
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.wallet_transactions (
     referee_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     description TEXT NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('booking_reward', 'qr_payment', 'referral', 'redemption', 'signup_bonus')),
-    salon_name TEXT NOT NULL DEFAULT 'GlowSlot Platform',
+    salon_name TEXT NOT NULL DEFAULT 'Nexora Platform',
     qr_bill_paise BIGINT,
     points INT NOT NULL, -- Positive for earn, negative for redeem
     status TEXT NOT NULL DEFAULT 'completed' CHECK (status IN ('completed', 'pending', 'expired')),
@@ -198,7 +198,7 @@ BEGIN
         p_referee_id,
         'Friend completed their first salon appointment.',
         'referral',
-        'GlowSlot Network',
+        'Nexora Network',
         p_points,
         'completed'
     );
@@ -219,7 +219,7 @@ BEGIN
         p_referee_id,
         'Referral signup reward credited.',
         'signup_bonus',
-        'GlowSlot Platform',
+        'Nexora Platform',
         p_points,
         'completed'
     );

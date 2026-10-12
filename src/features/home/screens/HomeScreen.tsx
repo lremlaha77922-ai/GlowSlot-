@@ -9,6 +9,8 @@ import { PopularSalonsSection } from '../components/PopularSalonsSection';
 import { ReferralCard } from '../components/ReferralCard';
 import { SmartRecommendationsSection } from '../components/SmartRecommendationsSection';
 import { PullToRefresh } from '../../../components/PullToRefresh';
+import { AppointmentReminderBanner } from '../../bookings/components/AppointmentReminderBanner';
+import { AppointmentReminder } from '../../../services/notificationReminderService';
 import { useUIStore } from '../../../store/useUIStore';
 import { festivalBanners, discountBanners, mockQuickServices, mockSalons } from '../../../data/mockData';
 
@@ -20,6 +22,9 @@ interface HomeScreenProps {
   onOpenProfile?: () => void;
   onOpenPoints?: () => void;
   onOpenRefer?: () => void;
+  activeReminder?: AppointmentReminder | null;
+  onSelectBooking?: (bookingId: string) => void;
+  onDismissReminder?: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -30,6 +35,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenProfile = () => {},
   onOpenPoints = () => {},
   onOpenRefer = () => {},
+  activeReminder,
+  onSelectBooking,
+  onDismissReminder,
 }) => {
   const { showToast } = useUIStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -51,6 +59,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           onOpenProfile={onOpenProfile}
           onOpenPoints={onOpenPoints}
         />
+
+        {/* 2-Hour Appointment Reminder Banner */}
+        {activeReminder && onSelectBooking && onDismissReminder && (
+          <div className="px-4 pt-3 pb-1">
+            <AppointmentReminderBanner
+              reminder={activeReminder}
+              onViewBooking={onSelectBooking}
+              onDismiss={onDismissReminder}
+            />
+          </div>
+        )}
 
         {/* SECTION 1 — Festival Offers Carousel */}
         <PromoCarousel sectionTitle="Festival Offers" banners={festivalBanners} />

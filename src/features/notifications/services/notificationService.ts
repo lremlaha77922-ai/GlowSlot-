@@ -58,7 +58,7 @@ export const notificationService = {
       {
         id: 'notif-4',
         type: 'system',
-        title: 'Welcome to GlowSlot!',
+        title: 'Welcome to Nexora!',
         message: 'Discover nearby verified salons with instant chair booking and zero wait time.',
         timestamp: '3 days ago',
         group: 'Earlier',

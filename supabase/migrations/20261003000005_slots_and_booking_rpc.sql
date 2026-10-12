@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Slots, Holds & Concurrency Booking SQL Migration
+-- Nexora Slots, Holds & Concurrency Booking SQL Migration
 -- ====================================================================
 
 -- 1. generate_slots Function to pre-generate or retrieve slots for a salon and date

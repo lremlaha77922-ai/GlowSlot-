@@ -112,7 +112,7 @@ export const QRPaymentScreen: React.FC<QRPaymentScreenProps> = ({ onBack, onSucc
             <ShieldCheck size={18} className="text-primary shrink-0 mt-0.5" />
             <div className="text-[11px] text-muted leading-relaxed">
               <strong className="text-text font-bold block mb-0.5">Partner Salon Requirement</strong>
-              Valid at all GlowSlot verified physical partner salons. Scan the official salon counter QR code or enter bill reference to claim instant cashback.
+              Valid at all Nexora verified physical partner salons. Scan the official salon counter QR code or enter bill reference to claim instant cashback.
             </div>
           </div>
         </div>

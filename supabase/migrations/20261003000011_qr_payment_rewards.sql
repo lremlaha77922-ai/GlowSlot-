@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Secure QR Payment Rewards SQL Migration
+-- Nexora Secure QR Payment Rewards SQL Migration
 -- ====================================================================
 
 -- 1. Ensure transaction reference is added or unique on wallet_transactions

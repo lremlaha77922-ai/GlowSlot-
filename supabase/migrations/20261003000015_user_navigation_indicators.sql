@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Secure User Navigation Indicators SQL Migration
+-- Nexora Secure User Navigation Indicators SQL Migration
 -- ====================================================================
 
 -- RPC to securely calculate and return current points, unread notifications count, and unread/pending booking indicators

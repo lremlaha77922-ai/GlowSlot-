@@ -347,7 +347,7 @@ export const salonService = {
         if (!error && data && data.length > 0) {
           return data.map((r: any) => ({
             id: r.id,
-            authorName: r.profiles?.full_name || 'GlowSlot User',
+            authorName: r.profiles?.full_name || 'Nexora User',
             rating: Number(r.rating),
             date: new Date(r.created_at).toLocaleDateString('en-IN', {
               month: 'short',

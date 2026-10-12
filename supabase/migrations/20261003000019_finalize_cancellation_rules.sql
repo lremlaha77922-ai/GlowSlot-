@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Final Booking Cancellation & Refund Rules Migration
+-- Nexora Final Booking Cancellation & Refund Rules Migration
 -- ====================================================================
 
 -- 1. Ensure cancellation related columns exist on public.bookings

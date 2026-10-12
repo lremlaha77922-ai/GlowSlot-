@@ -18,7 +18,7 @@ describe('30-Day Customer Re-engagement Automation Suite', () => {
       expect(msg).toContain("It's been a while since your last visit to Luxe Cut Studio.");
       expect(msg).toContain('Ready for your next beauty & grooming session?');
       expect(msg).toContain('https://glowslot.app/?salonId=sal-1');
-      expect(msg).toContain('— GlowSlot');
+      expect(msg).toContain('— Nexora');
     });
 
     it('generates valid WhatsApp click-to-chat URL with clean phone number', () => {
@@ -45,7 +45,7 @@ describe('30-Day Customer Re-engagement Automation Suite', () => {
       expect(record.booking_id).toBeDefined();
       expect(record.reminder_type).toBe('30_day_reengagement');
       expect(record.status).toBe('pending');
-      expect(record.message_text).toContain('GlowSlot');
+      expect(record.message_text).toContain('Nexora');
       expect(record.whatsapp_url).toContain('https://wa.me/');
     });
 

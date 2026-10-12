@@ -1,6 +1,6 @@
 {
   "appId": "com.glowslot.app",
-  "appName": "GlowSlot",
+  "appName": "Nexora",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "plugins": {

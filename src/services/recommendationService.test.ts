@@ -95,7 +95,7 @@ describe('AI Smart Recommendation System', () => {
               id: 'rec-2',
               title: 'Beard Sculpting & Charcoal Spa',
               category: 'Beard',
-              suggestedSalon: 'GlowSlot At-Home Pro',
+              suggestedSalon: 'Nexora At-Home Pro',
               pricePaise: 11900,
               durationMin: 30,
               reason: 'Pairs well with sharp haircuts.',

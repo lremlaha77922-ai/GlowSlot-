@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Booking Customer Details & Special Instructions SQL Migration
+-- Nexora Booking Customer Details & Special Instructions SQL Migration
 -- ====================================================================
 
 -- 1. Add special_instructions column to bookings table if not exists

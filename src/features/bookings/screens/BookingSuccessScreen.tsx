@@ -51,7 +51,7 @@ export const BookingSuccessScreen: React.FC<BookingSuccessScreenProps> = ({
       showToast('Appointment added to calendar.');
       return;
     }
-    const title = encodeURIComponent(`GlowSlot Appointment at ${booking.salonName}`);
+    const title = encodeURIComponent(`Nexora Appointment at ${booking.salonName}`);
     const details = encodeURIComponent(`Services: ${booking.services.map((s) => s.name).join(', ')}`);
     const location = encodeURIComponent(booking.salonAddress || booking.salonName);
     const start = booking.slot.date.replace(/-/g, '') + 'T' + booking.slot.time.replace(':', '') + '00Z';
@@ -69,7 +69,7 @@ export const BookingSuccessScreen: React.FC<BookingSuccessScreenProps> = ({
   const totalPaise = booking?.totalPaise || 0;
   const advancePaidPaise = Math.round(totalPaise * 0.25);
   const balanceDuePaise = Math.max(0, totalPaise - advancePaidPaise);
-  const salonName = booking?.salonName || 'GlowSlot Salon Partner';
+  const salonName = booking?.salonName || 'Nexora Salon Partner';
 
   return (
     <div className="min-h-screen bg-bg text-text pb-28">

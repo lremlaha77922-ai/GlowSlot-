@@ -30,7 +30,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
   const { showToast } = useUIStore();
 
   const handleSupportAction = (channel: string) => {
-    showToast(`Connecting to GlowSlot ${channel} support...`);
+    showToast(`Connecting to Nexora ${channel} support...`);
   };
 
   return (

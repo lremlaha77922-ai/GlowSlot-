@@ -77,7 +77,7 @@ export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({
 
     await setProfile(name.trim(), gender);
     setIsLoading(false);
-    showToast(`Welcome to GlowSlot, ${name.trim()}!`);
+    showToast(`Welcome to Nexora, ${name.trim()}!`);
     onComplete();
   };
 

@@ -4,6 +4,7 @@ import { useUIStore } from '../../../store/useUIStore';
 import { Button } from '../../../components/Button';
 import { referralService, ReferralItem } from '../services/referralService';
 import { ReferralLeaderboard } from './ReferralLeaderboard';
+import { buildReferralInviteUrl, buildWhatsAppShareUrl } from '../../../utils/url';
 import {
   ArrowLeft,
   Gift,
@@ -21,6 +22,7 @@ import {
   Zap,
   ShieldCheck,
   HelpCircle,
+  MessageCircle,
 } from 'lucide-react';
 import { Share } from '@capacitor/share';
 
@@ -49,8 +51,8 @@ export const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
   const [customAlias, setCustomAlias] = useState<string>('');
   const [isCustomizing, setIsCustomizing] = useState<boolean>(false);
 
-  // Invite link generated from referral code
-  const referralLink = `https://glowslot.app/invite?ref=${referralCode}`;
+  // Invite link generated dynamically using the application origin
+  const referralLink = buildReferralInviteUrl(referralCode);
 
   const [stats, setStats] = useState<{
     totalReferrals: number;
@@ -122,21 +124,26 @@ export const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
     setTimeout(() => setCopiedType(null), 2000);
   };
 
+  const handleWhatsAppShare = () => {
+    const waUrl = buildWhatsAppShareUrl(referralCode, referralLink);
+    window.open(waUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const handleNativeShare = async () => {
-    const shareText = `Use my invite code ${referralCode} to get flat Rs.100 off your first salon appointment on GlowSlot! Join and book here: ${referralLink}`;
+    const shareText = `Use my invite code ${referralCode} to get flat Rs.100 off your first salon appointment on Nexora! Join and book here: ${referralLink}`;
     try {
       await Share.share({
-        title: 'GlowSlot Referral Invite',
+        title: 'Nexora Referral Invite',
         text: shareText,
         url: referralLink,
-        dialogTitle: 'Share GlowSlot Invite',
+        dialogTitle: 'Share Nexora Invite',
       });
       showToast('Invite shared successfully!');
     } catch {
       if (navigator.share) {
         try {
           await navigator.share({
-            title: 'GlowSlot Referral Invite',
+            title: 'Nexora Referral Invite',
             text: shareText,
             url: referralLink,
           });
@@ -200,7 +207,7 @@ export const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
     const res = await referralService.recordReferralSignup(
       code,
       user?.email || 'new.user@glowslot.com',
-      user?.name || 'GlowSlot User'
+      user?.name || 'Nexora User'
     );
 
     if (res.success) {
@@ -377,17 +384,30 @@ export const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
             </Button>
           </div>
 
-          {/* Direct WhatsApp / Social Share Button */}
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            onClick={handleNativeShare}
-            className="flex items-center justify-center gap-2 mt-0.5 font-black shadow-xs"
-          >
-            <Share2 size={16} />
-            <span>Share Invite via WhatsApp / Socials</span>
-          </Button>
+          {/* Action Buttons: WhatsApp Share & Native Social Share */}
+          <div className="flex flex-col sm:flex-row gap-2 mt-0.5">
+            <Button
+              variant="outline"
+              size="lg"
+              fullWidth
+              onClick={handleWhatsAppShare}
+              className="flex-1 flex items-center justify-center gap-2 font-black border-success/40 text-success hover:bg-success-soft shadow-xs"
+            >
+              <MessageCircle size={16} />
+              <span>Share on WhatsApp</span>
+            </Button>
+
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={handleNativeShare}
+              className="flex-1 flex items-center justify-center gap-2 font-black shadow-xs"
+            >
+              <Share2 size={16} />
+              <span>Share Invite</span>
+            </Button>
+          </div>
         </div>
 
         {/* Milestone Booster Card */}

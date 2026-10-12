@@ -34,7 +34,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
         <Scissors size={40} className="stroke-[2.2]" />
       </div>
 
-      <h1 className="text-2xl font-bold tracking-tight">GlowSlot</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Nexora</h1>
       <p className="text-xs text-white/80 mt-1 font-medium tracking-wide">
         Smart Slots. Zero Wait.
       </p>

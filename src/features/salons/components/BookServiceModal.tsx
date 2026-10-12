@@ -7,6 +7,7 @@ import { Sheet } from '../../../components/Sheet';
 import { Button } from '../../../components/Button';
 import { useUIStore } from '../../../store/useUIStore';
 import { useSessionStore } from '../../../store/useSessionStore';
+import { useFavoritesStore } from '../../../store/useFavoritesStore';
 import {
   Plus,
   Check,
@@ -29,6 +30,7 @@ import {
   Phone,
   Mail,
   AlertCircle,
+  Heart,
 } from 'lucide-react';
 
 export interface CustomerDetails {
@@ -43,6 +45,7 @@ export interface BookServiceModalProps {
   onClose: () => void;
   salon: Salon;
   initialSelectedServiceIds?: string[];
+  initialSelectedSpecialistId?: string;
   onContinue: (
     salon: Salon,
     selectedServices: SalonServiceItem[],
@@ -98,11 +101,13 @@ export const BookServiceModal: React.FC<BookServiceModalProps> = ({
   onClose,
   salon,
   initialSelectedServiceIds,
+  initialSelectedSpecialistId,
   onContinue,
   onConfirmBooking,
 }) => {
   const { showToast } = useUIStore();
   const { user } = useSessionStore();
+  const { isFavoriteService, toggleFavoriteService } = useFavoritesStore();
 
   const services = salon.services || [];
   const specialists = salon.specialists || defaultSpecialists;
@@ -122,9 +127,20 @@ export const BookServiceModal: React.FC<BookServiceModalProps> = ({
   }, [isOpen, initialSelectedServiceIds, services]);
 
   // 2. Specialist selection state (null = "Any Specialist")
-  const [selectedSpecialist, setSelectedSpecialist] = useState<SpecialistItem | null>(
-    specialists[0] || null
-  );
+  const [selectedSpecialist, setSelectedSpecialist] = useState<SpecialistItem | null>(() => {
+    if (initialSelectedSpecialistId) {
+      const match = specialists.find((s) => s.id === initialSelectedSpecialistId);
+      if (match) return match;
+    }
+    return specialists[0] || null;
+  });
+
+  useEffect(() => {
+    if (isOpen && initialSelectedSpecialistId) {
+      const match = specialists.find((s) => s.id === initialSelectedSpecialistId);
+      if (match) setSelectedSpecialist(match);
+    }
+  }, [isOpen, initialSelectedSpecialistId, specialists]);
 
   // 3. Date & Slot selection state
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
@@ -425,8 +441,33 @@ export const BookServiceModal: React.FC<BookServiceModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Add / Remove Action Button */}
-                  <div className="flex items-center shrink-0">
+                  {/* Add / Remove Action Button & Favorite Heart */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const isFav = toggleFavoriteService(salon.id, salon.name, service);
+                        showToast(
+                          isFav
+                            ? `Added "${service.name}" to favorites`
+                            : `Removed "${service.name}" from favorites`
+                        );
+                      }}
+                      className="p-1.5 rounded-full hover:bg-primary-soft text-muted hover:text-accent transition-colors cursor-pointer"
+                      aria-label="Save service to favorites"
+                      title="Save Service to Favorites"
+                    >
+                      <Heart
+                        size={16}
+                        className={
+                          isFavoriteService(service.id, salon.id)
+                            ? 'fill-accent text-accent'
+                            : 'text-muted'
+                        }
+                      />
+                    </button>
+
                     <button
                       type="button"
                       onClick={(e) => {

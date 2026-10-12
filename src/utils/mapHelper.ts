@@ -16,7 +16,7 @@ export function openInGoogleMaps(
     // Destination using encoded name + address
     query = `${safeName}, ${safeAddress}`;
   } else {
-    console.error('[GlowSlot] Salon location is unavailable.');
+    console.error('[Nexora] Salon location is unavailable.');
     return;
   }
 

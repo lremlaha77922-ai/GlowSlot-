@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -43,7 +44,7 @@ const TRENDING_STYLES = [
     id: 'rec-beard-detox',
     title: 'Beard Sculpting & Charcoal Spa',
     category: 'Beard',
-    suggestedSalon: 'GlowSlot At-Home Pro',
+    suggestedSalon: 'Nexora At-Home Pro',
     salonId: 'salon-2',
     pricePaise: 11900,
     durationMin: 30,
@@ -113,7 +114,7 @@ Trending 2026 Grooming Context:
         model: 'gemini-3.8-flash',
         contents: prompt,
         config: {
-          systemInstruction: 'You are the Chief Grooming Stylist & AI Recommendation Engine for GlowSlot, a premier salon booking platform in India. Always generate accurate, fashionable recommendations formatted as JSON.',
+          systemInstruction: 'You are the Chief Grooming Stylist & AI Recommendation Engine for Nexora, a premier salon booking platform in India. Always generate accurate, fashionable recommendations formatted as JSON.',
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.ARRAY,
@@ -149,7 +150,7 @@ Trending 2026 Grooming Context:
             });
           }
         } catch (parseError) {
-          console.warn('[GlowSlot AI] Failed to parse JSON from Gemini, falling back to smart engine:', parseError);
+          console.warn('[Nexora AI] Failed to parse JSON from Gemini, falling back to smart engine:', parseError);
         }
       }
     }
@@ -192,7 +193,7 @@ Trending 2026 Grooming Context:
       recommendations: customized,
     });
   } catch (error: any) {
-    console.error('[GlowSlot API] /api/recommendations error:', error);
+    console.error('[Nexora API] /api/recommendations error:', error);
     return res.status(500).json({
       success: false,
       error: error?.message || 'Failed to generate smart recommendations',
@@ -203,9 +204,10 @@ Trending 2026 Grooming Context:
 
 async function startServer() {
   if (process.env.NODE_ENV === 'production') {
-    app.use(express.static('dist'));
-    app.get('*', (req, res) => {
-      res.sendFile('dist/index.html', { root: '.' });
+    const distPath = path.resolve(__dirname, 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   } else {
     const vite = await createViteServer({
@@ -216,7 +218,7 @@ async function startServer() {
   }
 
   app.listen(port, '0.0.0.0', () => {
-    console.log(`[GlowSlot Full-Stack] Server running on http://0.0.0.0:${port}`);
+    console.log(`[Nexora Full-Stack] Server running on http://0.0.0.0:${port}`);
   });
 }
 

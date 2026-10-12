@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Salon Profile Backend Queries & RPCs Migration
+-- Nexora Salon Profile Backend Queries & RPCs Migration
 -- ====================================================================
 
 -- 1. Ensure active salons query function (filtering out inactive/closed salons)

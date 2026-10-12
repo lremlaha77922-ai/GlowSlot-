@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Home Page Discovery RPCs & Queries Migration
+-- Nexora Home Page Discovery RPCs & Queries Migration
 -- ====================================================================
 
 -- 1. RPC for Nearby Salons (sorted by distance_km)

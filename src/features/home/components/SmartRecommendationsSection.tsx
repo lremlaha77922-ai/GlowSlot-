@@ -56,7 +56,7 @@ export const SmartRecommendationsSection: React.FC<SmartRecommendationsSectionPr
       setRecommendations(res.recommendations);
       setSource(res.source);
     } catch (e) {
-      console.error('[GlowSlot] Recommendation fetch failed:', e);
+      console.error('[Nexora] Recommendation fetch failed:', e);
     } finally {
       setLoading(false);
     }

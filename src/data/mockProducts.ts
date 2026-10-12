@@ -5,7 +5,7 @@ export const mockProducts: Product[] = [
   {
     id: 'prod-hair-1',
     name: 'Matte Clay Hair Pomade (100g)',
-    brand: 'GlowSlot Lab',
+    brand: 'Nexora Lab',
     category: 'Hair',
     price: 39900, // Rs.399
     originalPrice: 55000,
@@ -76,7 +76,7 @@ export const mockProducts: Product[] = [
   {
     id: 'prod-beard-2',
     name: 'Conditioning Beard Butter Balm (50g)',
-    brand: 'GlowSlot Lab',
+    brand: 'Nexora Lab',
     category: 'Beard',
     price: 39900,
     originalPrice: 50000,
@@ -129,7 +129,7 @@ export const mockProducts: Product[] = [
   {
     id: 'prod-skin-2',
     name: 'Hyaluronic Acid Hydrating Face Gel (50g)',
-    brand: 'GlowSlot Lab',
+    brand: 'Nexora Lab',
     category: 'Skin',
     price: 44900,
     originalPrice: 60000,

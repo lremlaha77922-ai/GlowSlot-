@@ -20,7 +20,7 @@ interface SessionState {
     referralCode?: string
   ) => Promise<{ success: boolean; message?: string; error?: string }>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
-  setProfile: (name: string, gender: Gender) => Promise<void>;
+  setProfile: (name: string, gender: Gender, avatarUrl?: string) => Promise<void>;
   updatePoints: (points: number) => void;
   setReferralCode: (code: string | null) => void;
   getReferralCode: () => string | null;
@@ -187,7 +187,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     return await authService.resetPassword(email);
   },
 
-  setProfile: async (name: string, gender: Gender) => {
+  setProfile: async (name: string, gender: Gender, avatarUrl?: string) => {
     const currentUser = get().user;
     if (!currentUser) return;
 
@@ -195,6 +195,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       ...currentUser,
       name,
       gender,
+      avatarUrl: avatarUrl !== undefined ? avatarUrl : currentUser.avatarUrl,
       isNewUser: false,
     };
 
@@ -205,6 +206,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     await authService.updateProfile(currentUser.id, {
       full_name: name,
       gender,
+      ...(avatarUrl !== undefined ? { avatar_url: avatarUrl } : {}),
     });
   },
 

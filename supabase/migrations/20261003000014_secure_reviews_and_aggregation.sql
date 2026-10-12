@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Secure Reviews & Salon Ratings Aggregation SQL Migration
+-- Nexora Secure Reviews & Salon Ratings Aggregation SQL Migration
 -- ====================================================================
 
 -- 1. Create the secure reviews table if not exists with a UNIQUE constraint to prevent duplicate reviews on the same booking

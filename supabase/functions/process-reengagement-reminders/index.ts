@@ -70,7 +70,7 @@ serve(async (req) => {
       const bookingId = String(booking.id);
       const userId = String(booking.user_id || "unknown-user");
       const salonId = booking.salon_id ? String(booking.salon_id) : undefined;
-      const salonName = (booking.salons as any)?.name || "GlowSlot Salon";
+      const salonName = (booking.salons as any)?.name || "Nexora Salon";
       const customerName = (booking.profiles as any)?.full_name || "Valued Customer";
       const rawPhone = (booking.profiles as any)?.phone || "";
 
@@ -105,7 +105,7 @@ serve(async (req) => {
         ? `https://glowslot.app/?salonId=${salonId}`
         : "https://glowslot.app/";
 
-      const messageText = `Hi ${customerName} 👋\n\nIt's been a while since your last visit to ${salonName}.\n\nReady for your next beauty & grooming session?\n\nBook your next appointment with GlowSlot:\n${bookingLink}\n\n— GlowSlot`;
+      const messageText = `Hi ${customerName} 👋\n\nIt's been a while since your last visit to ${salonName}.\n\nReady for your next beauty & grooming session?\n\nBook your next appointment with Nexora:\n${bookingLink}\n\n— Nexora`;
 
       const whatsappUrl = cleanPhone
         ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`

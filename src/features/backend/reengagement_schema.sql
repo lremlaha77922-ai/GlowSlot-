@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot 30-Day Customer Re-Engagement Automation Schema Migration
+-- Nexora 30-Day Customer Re-Engagement Automation Schema Migration
 -- ====================================================================
 
 -- 1. Create booking_reengagement_reminders Table

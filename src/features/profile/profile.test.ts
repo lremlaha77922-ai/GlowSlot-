@@ -61,4 +61,29 @@ describe('Profile, Favorites & Settings (Phase 4C & 5B)', () => {
     expect(useSessionStore.getState().user).toBeNull();
     expect(useSessionStore.getState().isGuest).toBe(false);
   });
+
+  it('updates profile with avatarUrl and persists in session store', async () => {
+    vi.spyOn(supabase, 'from').mockReturnValue({
+      upsert: vi.fn().mockResolvedValue({ error: null }),
+    } as any);
+
+    // Set an initial session
+    useSessionStore.getState().setUser({
+      id: '00000000-0000-0000-0000-000000000005',
+      name: 'Rohan Sharma',
+      gender: 'male',
+      points: 150,
+      email: 'rohan@glowslot.com',
+    });
+
+    const testAvatarUrl = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD';
+    await useSessionStore.getState().setProfile('Rohan Sharma', 'male', testAvatarUrl);
+
+    const updatedUser = useSessionStore.getState().user;
+    expect(updatedUser?.avatarUrl).toBe(testAvatarUrl);
+    expect(updatedUser?.name).toBe('Rohan Sharma');
+
+    // Verify session user state maintains avatarUrl
+    expect(useSessionStore.getState().user?.avatarUrl).toBe(testAvatarUrl);
+  });
 });

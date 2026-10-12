@@ -10,6 +10,7 @@ import { supabase } from '../../../lib/supabase';
 interface LoginScreenProps {
   onSuccess: () => void;
   onContinueAsGuest: () => void;
+  initialMode?: AuthMode;
 }
 
 type AuthMode = 'login' | 'signup' | 'forgot';
@@ -17,8 +18,9 @@ type AuthMode = 'login' | 'signup' | 'forgot';
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   onSuccess,
   onContinueAsGuest,
+  initialMode = 'login',
 }) => {
-  const [mode, setAuthMode] = useState<AuthMode>('login');
+  const [mode, setAuthMode] = useState<AuthMode>(initialMode);
 
   // Form states
   const [email, setEmail] = useState('');
@@ -122,7 +124,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       return;
     }
 
-    showToast(`Welcome to GlowSlot, ${fullName.trim()}!`);
+    showToast(`Welcome to Nexora, ${fullName.trim()}!`);
     setStoreReferralCode(null);
     onSuccess();
   };
@@ -160,7 +162,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         <div className="w-16 h-16 rounded-[20px] bg-primary text-white flex items-center justify-center shadow-level-1 mb-3">
           <Scissors size={32} />
         </div>
-        <h1 className="text-xl font-bold text-text">Welcome to GlowSlot</h1>
+        <h1 className="text-xl font-bold text-text">Welcome to Nexora</h1>
         <p className="text-xs text-muted mt-1 max-w-xs">
           {mode === 'login' && 'Sign in with your email to manage bookings and earn Glow Points.'}
           {mode === 'signup' && 'Create your account to unlock smart slot pricing and discounts.'}

@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Secure Payment and Slot-Lock SQL Migration
+-- Nexora Secure Payment and Slot-Lock SQL Migration
 -- ====================================================================
 
 -- 1. Create a secure payments table to record and trace transaction status

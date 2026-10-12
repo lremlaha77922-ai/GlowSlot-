@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Booking Confirmation Details SQL Migration
+-- Nexora Booking Confirmation Details SQL Migration
 -- ====================================================================
 
 -- RPC function to securely retrieve comprehensive confirmation data from an actual booking record
@@ -88,7 +88,7 @@ BEGIN
         v_booking_record.booking_number,
         v_booking_record.status,
         v_booking_record.payment_status,
-        COALESCE(v_salon_record.name, 'GlowSlot Partner Salon'),
+        COALESCE(v_salon_record.name, 'Nexora Partner Salon'),
         COALESCE(v_salon_record.address, 'Salon Location'),
         COALESCE(v_slot_record.date, CURRENT_DATE),
         COALESCE(v_slot_record.start_time, '10:00:00'::TIME),

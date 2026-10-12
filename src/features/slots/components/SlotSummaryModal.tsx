@@ -151,7 +151,7 @@ export const SlotSummaryModal: React.FC<SlotSummaryModalProps> = ({
             </span>
             <span className="text-[11px] font-medium text-primary flex items-center gap-1">
               <Sparkles size={12} />
-              GlowSlot Verified
+              Nexora Verified
             </span>
           </div>
 
@@ -263,7 +263,7 @@ export const SlotSummaryModal: React.FC<SlotSummaryModalProps> = ({
             <div className="flex items-center justify-between text-text font-medium">
               <span className="flex items-center gap-1.5">
                 <User size={13} className="text-primary" />
-                {customerDetails.name || 'GlowSlot Guest'}
+                {customerDetails.name || 'Nexora Guest'}
               </span>
               {customerDetails.phone && (
                 <span className="flex items-center gap-1 text-muted text-[11px]">

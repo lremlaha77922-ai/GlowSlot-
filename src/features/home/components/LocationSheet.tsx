@@ -55,7 +55,7 @@ export const LocationSheet: React.FC<LocationSheetProps> = ({
           <MapPin size={18} className="text-primary shrink-0 mt-0.5" />
           <p className="text-xs text-text leading-relaxed">
             <strong className="text-primary font-bold block mb-0.5">Location Access Rationale</strong>
-            GlowSlot requires location access to discover nearby verified salons within 5 km and show live off-peak slot availability.
+            Nexora requires location access to discover nearby verified salons within 5 km and show live off-peak slot availability.
           </p>
         </div>
 

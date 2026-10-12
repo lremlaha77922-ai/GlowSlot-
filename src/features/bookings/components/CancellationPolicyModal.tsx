@@ -35,7 +35,7 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
           const data = await bookingService.getBookingById(bookingId, user?.id);
           setBooking(data);
         } catch (error) {
-          console.error('[GlowSlot] Failed to load booking for policy modal:', error);
+          console.error('[Nexora] Failed to load booking for policy modal:', error);
         } finally {
           setLoading(false);
         }
@@ -149,7 +149,7 @@ export const CancellationPolicyModal: React.FC<CancellationPolicyModalProps> = (
             {/* 24-Hour Rule Reference Cards */}
             <div className="flex flex-col gap-2">
               <h3 className="text-[10px] font-black text-muted uppercase tracking-widest px-1 flex items-center gap-1">
-                <ShieldAlert size={12} className="text-primary" /> GlowSlot Cancellation Rules
+                <ShieldAlert size={12} className="text-primary" /> Nexora Cancellation Rules
               </h3>
 
               <div className="grid grid-cols-2 gap-2 text-xs">

@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Refund Request & Admin Approval Migration
+-- Nexora Refund Request & Admin Approval Migration
 -- ====================================================================
 
 -- 1. Add refund related columns to public.bookings

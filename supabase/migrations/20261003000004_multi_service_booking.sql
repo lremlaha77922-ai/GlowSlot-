@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Multi-Service Booking Validation & Calculation Migration
+-- Nexora Multi-Service Booking Validation & Calculation Migration
 -- ====================================================================
 
 -- Function to validate multi-service selection, ensure same salon, verify active status,

@@ -120,18 +120,18 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
   };
 
   const handlePayAndLockSlot = async () => {
-    console.log('[GlowSlot] Continue to QR Payment clicked, isProcessingPayment:', isProcessingPayment);
+    console.log('[Nexora] Continue to QR Payment clicked, isProcessingPayment:', isProcessingPayment);
     
     if (isProcessingPayment) return; // Prevent double clicks
     
     // 1. Validation
     if (!slot || !slot.id || !slot.date || !slot.time) {
-      console.error('[GlowSlot] Payment transition blocked: Missing slot', slot);
+      console.error('[Nexora] Payment transition blocked: Missing slot', slot);
       showToast('Selected time slot is invalid.');
       return;
     }
     if (!services || services.length === 0) {
-      console.error('[GlowSlot] Payment transition blocked: No services', services);
+      console.error('[Nexora] Payment transition blocked: No services', services);
       showToast('No services selected.');
       return;
     }
@@ -140,22 +140,22 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
 
     try {
       // 2. Lock the slot
-      console.log('[GlowSlot] Attempting to hold slot:', slot.id);
+      console.log('[Nexora] Attempting to hold slot:', slot.id);
       const holdRes = await slotService.holdSlot(slot.id, user?.id);
       
       if (!holdRes.success) {
-        console.error('[GlowSlot] Slot lock failed:', holdRes.error);
+        console.error('[Nexora] Slot lock failed:', holdRes.error);
         showToast(holdRes.error || 'This slot is no longer available.');
         setIsProcessingPayment(false);
         return;
       }
 
       // 3. Success: Update state to show QR Payment view
-      console.log('[GlowSlot] Slot lock successful, showing QR payment');
+      console.log('[Nexora] Slot lock successful, showing QR payment');
       setShowPaymentQR(true);
       setIsProcessingPayment(false);
     } catch (error) {
-      console.error('[GlowSlot] Continue to QR Payment failed:', error);
+      console.error('[Nexora] Continue to QR Payment failed:', error);
       showToast('An unexpected error occurred while holding the slot.');
       setIsProcessingPayment(false);
     }

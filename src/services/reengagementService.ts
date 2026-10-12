@@ -44,7 +44,7 @@ export function generateReengagementMessage(
 ): string {
   const name = customerName.trim() || 'Valued Customer';
   const salon = salonName.trim() || 'your favorite salon';
-  return `Hi ${name} 👋\n\nIt's been a while since your last visit to ${salon}.\n\nReady for your next beauty & grooming session?\n\nBook your next appointment with GlowSlot:\n${bookingLink}\n\n— GlowSlot`;
+  return `Hi ${name} 👋\n\nIt's been a while since your last visit to ${salon}.\n\nReady for your next beauty & grooming session?\n\nBook your next appointment with Nexora:\n${bookingLink}\n\n— Nexora`;
 }
 
 // Helper: Generate WhatsApp click-to-chat URL
@@ -134,7 +134,7 @@ export const reengagementService = {
               booking_id: b.id,
               user_id: b.user_id || 'user-unknown',
               salon_id: b.salon_id,
-              salon_name: b.salons?.name || b.salon_name || 'GlowSlot Partner Salon',
+              salon_name: b.salons?.name || b.salon_name || 'Nexora Partner Salon',
               customer_name: b.profiles?.full_name || 'Customer',
               phone: b.profiles?.phone || b.phone || '',
               completed_at: new Date(b.created_at),
@@ -230,7 +230,7 @@ export const reengagementService = {
       const bookingLink = generateBookingLink(candidate.salon_id);
       const messageText = generateReengagementMessage(
         candidate.customer_name || 'Customer',
-        candidate.salon_name || 'GlowSlot Salon',
+        candidate.salon_name || 'Nexora Salon',
         bookingLink
       );
       const whatsappUrl = phone ? generateWhatsAppClickToChatUrl(phone, messageText) : undefined;

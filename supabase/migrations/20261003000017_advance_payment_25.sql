@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot 25% Advance Payment Database Migration
+-- Nexora 25% Advance Payment Database Migration
 -- ====================================================================
 
 -- 1. Ensure advance_paise and balance_paise exist on public.bookings

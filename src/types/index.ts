@@ -32,6 +32,14 @@ export interface SpecialistItem {
   photoUrl: string;
   earliestSlot: string;
   specialties?: string[];
+  bio?: string;
+  availableDays?: string[];
+  workingHours?: string;
+  isAvailableToday?: boolean;
+  totalAppointments?: number;
+  certifications?: string[];
+  availableSlotTimes?: string[];
+  instagramHandle?: string;
 }
 
 export interface PackageItem {

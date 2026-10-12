@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Similar Salons Nearby SQL Migration
+-- Nexora Similar Salons Nearby SQL Migration
 -- ====================================================================
 
 -- RPC to find and retrieve similar active salons nearby the target salon

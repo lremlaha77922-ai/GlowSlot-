@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Play, Star, Eye, ChevronLeft, ChevronRight, Sparkles, Flame } from 'lucide-react';
+import { Play, Star, Eye, ChevronLeft, ChevronRight, Sparkles, Flame, Volume2, VolumeX, Pause } from 'lucide-react';
 import { Button } from '../../../components/Button';
 
 interface ReelItem {
@@ -13,6 +13,7 @@ interface ReelItem {
   views: string;
   duration: string;
   thumbnailUrl: string;
+  videoUrl: string;
   category: string;
 }
 
@@ -28,6 +29,7 @@ const REELS_DATA: ReelItem[] = [
     views: '12.4K',
     duration: '0:30',
     thumbnailUrl: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=400&q=80',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
     category: 'Hair Styling',
   },
   {
@@ -41,12 +43,13 @@ const REELS_DATA: ReelItem[] = [
     views: '8.9K',
     duration: '0:45',
     thumbnailUrl: 'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=400&q=80',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
     category: 'Facials',
   },
   {
     id: 'reel-3',
     salonId: 'luxe-cut-style',
-    salonName: 'GlowSlot Salon',
+    salonName: 'Nexora Salon',
     salonLogo: '🌸',
     serviceTitle: 'Ayurvedic Hot Warm-Oil Spa',
     pricePaise: 49900,
@@ -54,6 +57,7 @@ const REELS_DATA: ReelItem[] = [
     views: '15.2K',
     duration: '0:55',
     thumbnailUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
     category: 'Therapy',
   },
   {
@@ -67,6 +71,7 @@ const REELS_DATA: ReelItem[] = [
     views: '6.5K',
     duration: '0:25',
     thumbnailUrl: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=400&q=80',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
     category: 'Grooming',
   },
 ];
@@ -81,6 +86,8 @@ export const PromotionalReelsSection: React.FC<PromotionalReelsSectionProps> = (
   onSelectSalon,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [isSoundOn, setIsSoundOn] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const filteredReels = selectedCategory === 'All'
@@ -175,15 +182,50 @@ export const PromotionalReelsSection: React.FC<PromotionalReelsSectionProps> = (
           >
             {/* Cinematic Video Reel Thumbnail */}
             <div className="h-64 sm:h-72 w-full relative bg-black overflow-hidden flex items-center justify-center">
-              <img
-                src={reel.thumbnailUrl}
-                alt={reel.serviceTitle}
-                loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-              />
+              {playingVideoId === reel.id ? (
+                <video
+                  src={reel.videoUrl}
+                  autoPlay
+                  muted={!isSoundOn}
+                  className="w-full h-full object-cover"
+                  onEnded={() => setPlayingVideoId(null)}
+                />
+              ) : (
+                <img
+                  src={reel.thumbnailUrl}
+                  alt={reel.serviceTitle}
+                  loading="lazy"
+                  onMouseEnter={() => setPlayingVideoId(reel.id)}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+              )}
+              
+              {/* Overlay controls */}
+              {playingVideoId === reel.id && (
+                <div className="absolute top-2 right-2 flex gap-1 z-20">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsSoundOn(!isSoundOn);
+                    }}
+                    className="p-1.5 rounded-full bg-black/50 text-white backdrop-blur-md"
+                  >
+                    {isSoundOn ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPlayingVideoId(null);
+                    }}
+                    className="p-1.5 rounded-full bg-black/50 text-white backdrop-blur-md"
+                  >
+                    <Pause size={14} />
+                  </button>
+                </div>
+              )}
               
               {/* Premium Top Gradient Overlay for Salon Name & Rating */}
               <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-black/80 to-transparent pointer-events-none" />
@@ -203,12 +245,16 @@ export const PromotionalReelsSection: React.FC<PromotionalReelsSectionProps> = (
                 </div>
               </div>
 
-              {/* Pulsing Play Button overlay in center */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:border-primary pointer-events-auto cursor-pointer">
-                  <Play size={20} className="text-white fill-white ml-0.5" />
+              {/* Pulsing Play Button overlay in center - only if not playing */}
+              {playingVideoId !== reel.id && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div 
+                    onClick={() => setPlayingVideoId(reel.id)}
+                    className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:border-primary pointer-events-auto cursor-pointer">
+                    <Play size={20} className="text-white fill-white ml-0.5" />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Bottom Row Overlay: Duration and Views */}
               <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between text-[10px] font-bold text-white z-10">

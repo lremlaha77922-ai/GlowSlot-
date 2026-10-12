@@ -39,7 +39,7 @@ const FALLBACK_STYLES: SmartRecommendationItem[] = [
     id: 'rec-2',
     title: 'Beard Sculpting & Charcoal Spa',
     category: 'Beard',
-    suggestedSalon: 'GlowSlot At-Home Pro',
+    suggestedSalon: 'Nexora At-Home Pro',
     salonId: 'salon-2',
     pricePaise: 11900,
     durationMin: 30,
@@ -106,7 +106,7 @@ export const recommendationService = {
         },
         body: JSON.stringify({
           userId: params.userId,
-          userName: params.userName || 'GlowSlot Member',
+          userName: params.userName || 'Nexora Member',
           bookingHistory: history.slice(0, 5), // last 5 bookings
           categoryFilter: params.categoryFilter || 'all',
           gender: params.gender || 'all',
@@ -128,7 +128,7 @@ export const recommendationService = {
 
       throw new Error('Invalid recommendations array');
     } catch (error) {
-      console.warn('[GlowSlot] Fetch /api/recommendations failed, using client heuristic engine:', error);
+      console.warn('[Nexora] Fetch /api/recommendations failed, using client heuristic engine:', error);
 
       // Client heuristic personalization fallback
       let filtered = [...FALLBACK_STYLES];

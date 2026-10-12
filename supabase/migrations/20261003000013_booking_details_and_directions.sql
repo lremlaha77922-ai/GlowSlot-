@@ -1,5 +1,5 @@
 -- ====================================================================
--- GlowSlot Booking Details & Directions SQL Migration
+-- Nexora Booking Details & Directions SQL Migration
 -- ====================================================================
 
 -- 1. Ensure latitude & longitude exist in salons table

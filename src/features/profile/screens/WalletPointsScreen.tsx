@@ -326,7 +326,7 @@ export const WalletPointsScreen: React.FC<WalletPointsScreenProps> = ({
           <div className="flex flex-col gap-1">
             <h4 className="text-xs font-bold text-text">Earn More Points</h4>
             <p className="text-[11px] text-muted leading-tight">
-              Invite friends to GlowSlot and earn referral rewards.
+              Invite friends to Nexora and earn referral rewards.
             </p>
           </div>
           <Button

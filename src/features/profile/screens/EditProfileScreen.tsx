@@ -3,7 +3,7 @@ import { useSessionStore } from '../../../store/useSessionStore';
 import { useUIStore } from '../../../store/useUIStore';
 import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
-import { ArrowLeft, User, Phone, Mail, Camera } from 'lucide-react';
+import { ArrowLeft, User, Phone, Mail, Camera, X, Check, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Gender } from '../../../types';
 import { storageService } from '../services/storageService';
 
@@ -19,22 +19,71 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBack }) 
   const [gender, setGender] = useState<Gender>(user?.gender || 'male');
   const [email, setEmail] = useState(user?.email || 'aarav.sharma@example.com');
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(user?.avatarUrl);
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [photoError, setPhotoError] = useState('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhotoError('');
     const file = e.target.files?.[0];
     if (!file) return;
 
-    showToast('Uploading profile photo...');
-    const res = await storageService.uploadAvatar(user?.id || 'guest', file);
+    // Validate image format and 5MB limit
+    const validation = storageService.validateImageFile(file);
+    if (!validation.valid) {
+      setPhotoError(validation.error || 'Invalid file.');
+      showToast(validation.error || 'Invalid file.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setPendingAvatarFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPendingPreviewUrl(objectUrl);
+  };
+
+  const handleCancelPendingPhoto = () => {
+    if (pendingPreviewUrl && pendingPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(pendingPreviewUrl);
+    }
+    setPendingAvatarFile(null);
+    setPendingPreviewUrl(null);
+    setPhotoError('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleSavePendingPhoto = async () => {
+    if (!pendingAvatarFile) return;
+
+    setIsUploadingPhoto(true);
+    setPhotoError('');
+    const res = await storageService.uploadAvatar(user?.id || 'guest', pendingAvatarFile);
+    setIsUploadingPhoto(false);
+
     if (res.success && res.publicUrl) {
-      setAvatarUrl(res.publicUrl);
-      showToast('Profile photo updated!');
+      const newUrl = res.publicUrl;
+      setAvatarUrl(newUrl);
+      if (pendingPreviewUrl && pendingPreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(pendingPreviewUrl);
+      }
+      setPendingAvatarFile(null);
+      setPendingPreviewUrl(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      showToast('Profile photo ready to save!');
     } else {
+      setPhotoError(res.error || 'Failed to upload photo.');
       showToast(res.error || 'Failed to upload photo.');
     }
+  };
+
+  const handleRemovePhoto = () => {
+    setAvatarUrl(undefined);
+    handleCancelPendingPhoto();
+    showToast('Photo removed. Initials will be used.');
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -45,7 +94,17 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBack }) 
     }
 
     setIsLoading(true);
-    await setProfile(name.trim(), gender);
+
+    let finalAvatarUrl = avatarUrl;
+    // If user has a pending photo selected but hasn't clicked "Save Photo", save it automatically now
+    if (pendingAvatarFile) {
+      const res = await storageService.uploadAvatar(user?.id || 'guest', pendingAvatarFile);
+      if (res.success && res.publicUrl) {
+        finalAvatarUrl = res.publicUrl;
+      }
+    }
+
+    await setProfile(name.trim(), gender, finalAvatarUrl);
     setIsLoading(false);
     showToast('Profile updated successfully!');
     onBack();
@@ -68,38 +127,120 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBack }) 
       </header>
 
       <main className="p-4 max-w-lg mx-auto w-full">
-        {/* Hidden File Input */}
+        {/* Hidden File Input supporting JPG, JPEG, PNG, WEBP with camera capture */}
         <input
           type="file"
           ref={fileInputRef}
-          onChange={handleAvatarChange}
-          accept="image/*"
+          onChange={handleFileSelected}
+          accept="image/jpeg,image/png,image/webp,image/jpg"
+          capture="environment"
           className="hidden"
         />
 
-        {/* Avatar with Camera icon */}
+        {/* Avatar with Camera icon & Upload Options */}
         <div className="flex flex-col items-center py-4 mb-2">
-          <div className="relative">
-            {avatarUrl ? (
+          <div className="relative group">
+            {pendingPreviewUrl ? (
+              <img
+                src={pendingPreviewUrl}
+                alt="Pending preview"
+                className="w-24 h-24 rounded-full object-cover shadow-level-1 border-3 border-accent ring-4 ring-accent/20 animate-pulse"
+              />
+            ) : avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={name}
-                className="w-20 h-20 rounded-full object-cover shadow-level-1 border-2 border-primary"
+                className="w-24 h-24 rounded-full object-cover shadow-level-1 border-3 border-primary ring-2 ring-primary/20"
               />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-primary text-white text-2xl font-bold flex items-center justify-center shadow-level-1">
+              <div className="w-24 h-24 rounded-full bg-primary text-white text-3xl font-bold flex items-center justify-center shadow-level-1">
                 {name.charAt(0).toUpperCase() || 'U'}
               </div>
             )}
+
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-0 right-0 p-1.5 rounded-full bg-accent text-white shadow-xs hover:brightness-110 cursor-pointer"
-              aria-label="Change photo"
+              disabled={isUploadingPhoto}
+              className="absolute bottom-0 right-0 p-2 rounded-full bg-accent text-white shadow-md hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+              aria-label="Upload photo"
+              title="Upload photo from Gallery or Camera"
             >
-              <Camera size={14} />
+              <Camera size={16} />
             </button>
           </div>
+
+          {/* Action buttons for Pending Photo Preview */}
+          {pendingPreviewUrl && (
+            <div className="mt-3 flex items-center gap-2 bg-surface border border-accent/30 rounded-card p-2 px-3 shadow-xs">
+              <span className="text-[11px] font-semibold text-text flex items-center gap-1 mr-1">
+                <ImageIcon size={13} className="text-accent" />
+                Previewing
+              </span>
+              <button
+                type="button"
+                onClick={handleSavePendingPhoto}
+                disabled={isUploadingPhoto}
+                className="flex items-center gap-1 px-2.5 py-1 bg-primary text-white rounded-chip text-xs font-bold hover:brightness-105 disabled:opacity-50 cursor-pointer"
+              >
+                {isUploadingPhoto ? (
+                  <>
+                    <Loader2 size={12} className="animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check size={12} />
+                    <span>Apply</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelPendingPhoto}
+                disabled={isUploadingPhoto}
+                className="flex items-center gap-1 px-2.5 py-1 bg-surface border border-border text-muted rounded-chip text-xs font-semibold hover:text-error hover:border-error cursor-pointer"
+              >
+                <X size={12} />
+                <span>Cancel</span>
+              </button>
+            </div>
+          )}
+
+          {/* Upload Photo Button & Guidance */}
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-xs font-bold text-primary hover:underline cursor-pointer flex items-center gap-1"
+            >
+              <Camera size={13} />
+              <span>{avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
+            </button>
+            {avatarUrl && !pendingPreviewUrl && (
+              <>
+                <span className="text-muted text-xs">•</span>
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  className="text-xs font-medium text-error hover:underline cursor-pointer"
+                >
+                  Remove
+                </button>
+              </>
+            )}
+          </div>
+
+          <span className="text-[10px] text-muted mt-1">
+            JPG, PNG, WEBP • Max 5 MB
+          </span>
+
+          {photoError && (
+            <div className="mt-2 text-xs text-error font-medium bg-error/10 border border-error/20 px-3 py-1.5 rounded-card max-w-xs text-center">
+              {photoError}
+            </div>
+          )}
+
           <span className="text-xs text-muted mt-2 font-mono">
             {user?.phone || '+91 98765 43210'}
           </span>
@@ -167,7 +308,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBack }) 
           </div>
 
           <div className="pt-4">
-            <Button type="submit" variant="primary" size="lg" fullWidth disabled={isLoading}>
+            <Button type="submit" variant="primary" size="lg" fullWidth disabled={isLoading || isUploadingPhoto}>
               {isLoading ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>

@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../../../lib/supabase';
+import { userService } from './userService';
 
 export interface ReferralItem {
   id: string;
@@ -43,7 +44,7 @@ export const referralService = {
             totalPointsEarned: points,
             referrals: data.map((r: any) => ({
               id: r.id,
-              friendName: r.friend_name || 'GlowSlot Member',
+              friendName: r.friend_name || 'Nexora Member',
               friendEmail: r.friend_email || 'member@glowslot.com',
               status: r.status,
               pointsEarned: r.points_awarded || 100,
@@ -132,6 +133,35 @@ export const referralService = {
     return { success: true };
   },
 
+  async completeReferralOnFirstBooking(userId: string, userEmail?: string): Promise<{ success: boolean; pointsAwarded: number; referrerId?: string }> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        let query = supabase.from('referrals').select('*').eq('status', 'pending');
+        if (userEmail) {
+          query = query.eq('friend_email', userEmail);
+        }
+        const { data, error } = await query;
+        if (!error && data && data.length > 0) {
+          const pendingRef = data[0];
+          await supabase.from('referrals').update({ status: 'completed' }).eq('id', pendingRef.id);
+          const points = pendingRef.points_awarded || 100;
+          if (pendingRef.referrer_id) {
+            await userService.earnReferralReward(pendingRef.referrer_id, userId, points);
+          }
+          return { success: true, pointsAwarded: points, referrerId: pendingRef.referrer_id };
+        }
+      } catch (err) {
+        console.error('[REFERRAL] completeReferralOnFirstBooking exception:', err);
+      }
+    }
+
+    const appliedCode = localStorage.getItem(`glowslot_applied_code_${userId}`) || localStorage.getItem('glowslot_referrer_code');
+    if (appliedCode) {
+      return { success: true, pointsAwarded: 100, referrerId: appliedCode };
+    }
+    return { success: false, pointsAwarded: 0 };
+  },
+
   async getTopReferrers(limit: number = 5): Promise<LeaderboardReferrer[]> {
     if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
       try {
@@ -166,7 +196,7 @@ export const referralService = {
       }
     }
 
-    // Community mock leaderboard (top 5 GlowSlot referrers)
+    // Community mock leaderboard (top 5 Nexora referrers)
     const communityTopReferrers: LeaderboardReferrer[] = [
       {
         rank: 1,

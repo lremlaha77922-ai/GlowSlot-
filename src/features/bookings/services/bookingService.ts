@@ -1,6 +1,8 @@
 import { supabase, isSupabaseConfigured } from '../../../lib/supabase';
 import { Booking, BookingReview, PaymentMethod, UserAddress } from '../../../types';
 import { getFriendlyErrorMessage } from '../../../services/errors';
+import { userService } from '../../profile/services/userService';
+import { referralService } from '../../profile/services/referralService';
 
 const STORAGE_KEY = 'glowslot_bookings';
 
@@ -33,7 +35,7 @@ const SEED_BOOKINGS: Booking[] = [
   {
     id: 'GS-2026-72419',
     type: 'athome',
-    salonName: 'GlowSlot At-Home Pro',
+    salonName: 'Nexora At-Home Pro',
     services: [
       { name: 'Classic Clean Shave & Beard Trim', durationMin: 30, price: 19900, qty: 1 },
     ],
@@ -57,6 +59,68 @@ const SEED_BOOKINGS: Booking[] = [
       tags: ['On Time', 'Clean Setup', 'Polite Stylist'],
       text: 'Stylist arrived 5 mins before time with a sealed sanitized kit. Excellent work.',
       submittedAt: '2026-09-28T12:00:00Z',
+    },
+  },
+  {
+    id: 'GS-2026-61045',
+    type: 'salon',
+    salonName: 'Aura Luxe Beauty Lounge',
+    salonAddress: '77, 80 Feet Road, 4th Block, Indiranagar, Bengaluru',
+    services: [
+      { name: 'Hydra Facial & Glow Treatment', durationMin: 60, price: 34900, qty: 1 },
+    ],
+    slot: {
+      date: '2026-09-20',
+      time: '14:30',
+    },
+    subtotalPaise: 34900,
+    platformFeePaise: 1000,
+    taxPaise: 6282,
+    couponDiscountPaise: 0,
+    pointsDiscountPaise: 0,
+    totalPaise: 42182,
+    paymentMethod: 'upi',
+    paymentStatus: 'paid',
+    status: 'cancelled',
+    createdAt: '2026-09-18T11:20:00Z',
+    rescheduleCount: 0,
+    cancellation: {
+      reason: 'Schedule conflict with personal appointment',
+      refundAmountPaise: 42182,
+      refundPercent: 100,
+      cancelledAt: '2026-09-19T09:15:00Z',
+      refundStatus: 'refunded',
+    },
+  },
+  {
+    id: 'GS-2026-50821',
+    type: 'salon',
+    salonName: 'Urban Fade & Shave Studio',
+    salonAddress: '15, HSR Layout, Sector 3, Bengaluru',
+    services: [
+      { name: 'Keratin Hair Spa & Treatment', durationMin: 45, price: 28900, qty: 1 },
+      { name: 'Beard Sculpting & Styling', durationMin: 20, price: 9900, qty: 1 },
+    ],
+    slot: {
+      date: '2026-09-12',
+      time: '16:00',
+    },
+    subtotalPaise: 38800,
+    platformFeePaise: 1000,
+    taxPaise: 6984,
+    couponDiscountPaise: 4000,
+    pointsDiscountPaise: 1000,
+    totalPaise: 40784,
+    paymentMethod: 'upi',
+    paymentStatus: 'paid',
+    status: 'completed',
+    createdAt: '2026-09-10T15:00:00Z',
+    rescheduleCount: 0,
+    review: {
+      rating: 5,
+      tags: ['Master Stylist', 'Great Ambience', 'Zero Waiting Time'],
+      text: 'Superb keratin spa treatment. The scalp massage was so relaxing!',
+      submittedAt: '2026-09-12T17:30:00Z',
     },
   },
 ];
@@ -100,7 +164,7 @@ export const bookingService = {
           return data.map((b: any) => ({
             id: b.booking_number || b.id,
             type: b.booking_type || 'salon',
-            salonName: b.salons?.name || 'GlowSlot Salon',
+            salonName: b.salons?.name || 'Nexora Salon',
             salonAddress: b.salons?.address,
             latitude: b.salons?.latitude ? Number(b.salons.latitude) : undefined,
             longitude: b.salons?.longitude ? Number(b.salons.longitude) : undefined,
@@ -601,6 +665,65 @@ export const bookingService = {
     const current = getStoredBookings();
     saveStoredBookings([newBooking, ...current]);
     return { success: true, booking: newBooking };
+  },
+
+  async updateBookingStatus(
+    bookingId: string,
+    status: 'completed' | 'cancelled',
+    userId: string,
+    totalPaise: number,
+    salonName: string
+  ): Promise<{ success: boolean; error?: string }> {
+    if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
+      try {
+        const { error } = await supabase
+          .from('bookings')
+          .update({ status: status })
+          .eq('id', bookingId);
+        
+        if (error) return { success: false, error: getFriendlyErrorMessage(error.message) };
+        
+        if (status === 'completed') {
+          // Award points: 1 point per ₹100 spent (totalPaise / 10000)
+          const points = Math.floor(totalPaise / 10000);
+          if (points > 0) {
+            await userService.awardBookingReward(userId, bookingId, points, salonName);
+          }
+
+          // Check for pending referral attribution on first completed booking
+          try {
+            await referralService.completeReferralOnFirstBooking(userId);
+          } catch (e) {
+            console.error('Failed to trigger referral completion:', e);
+          }
+        }
+        
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: getFriendlyErrorMessage(err?.message) };
+      }
+    }
+    
+    // Mock
+    const list = getStoredBookings();
+    const updated = list.map((b) => (b.id === bookingId ? { ...b, status: status } : b));
+    saveStoredBookings(updated);
+    
+    if (status === 'completed') {
+      const points = Math.floor(totalPaise / 10000);
+      if (points > 0) {
+        await userService.awardBookingReward(userId, bookingId, points, salonName);
+      }
+
+      // Check for pending referral attribution on first completed booking
+      try {
+        await referralService.completeReferralOnFirstBooking(userId);
+      } catch (e) {
+        console.error('Failed to trigger referral completion:', e);
+      }
+    }
+    
+    return { success: true };
   },
 
   canReschedule(booking: Booking): { allowed: boolean; reason?: string } {

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Salon, SalonServiceItem, PackageItem, ReviewItem } from '../../../types';
+import { Salon, SalonServiceItem, PackageItem, ReviewItem, SpecialistItem } from '../../../types';
 import { salonService } from '../services/salonService';
 import { ReviewPhotoGallery } from '../components/ReviewPhotoGallery';
 import { WriteReviewModal } from '../components/WriteReviewModal';
+import { MeetOurStylistsSection } from '../components/MeetOurStylistsSection';
 import { InteractiveSalonMap } from '../../../components/InteractiveSalonMap';
 import { formatMoney } from '../../../utils/money';
 import { Button } from '../../../components/Button';
@@ -31,7 +32,7 @@ interface SalonDetailScreenProps {
   onBack: () => void;
   onSelectServiceForSlot: (salon: Salon, service: { id: string; name: string; durationMin: number; basePrice: number }) => void;
   onSelectSalon?: (salonId: string) => void;
-  onBookNowModal?: (salon: Salon, initialSelectedServiceIds?: string[]) => void;
+  onBookNowModal?: (salon: Salon, initialSelectedServiceIds?: string[], initialSpecialistId?: string) => void;
 }
 
 export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
@@ -44,13 +45,13 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
   const [salon, setSalon] = useState<Salon | null>(null);
   const [similarSalons, setSimilarSalons] = useState<Salon[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'services' | 'packages' | 'reviews' | 'about'>('services');
+  const [activeTab, setActiveTab] = useState<'services' | 'stylists' | 'packages' | 'reviews' | 'about'>('services');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isFav, setIsFav] = useState(false);
   const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
   const [reviewsList, setReviewsList] = useState<ReviewItem[]>([]);
 
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
+  const { isFavorite, toggleFavorite, isFavoriteService, toggleFavoriteService } = useFavoritesStore();
   const { showToast } = useUIStore();
 
   useEffect(() => {
@@ -95,7 +96,7 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
 
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({ title: salon.name, text: `Check out ${salon.name} on GlowSlot`, url: window.location.href });
+      navigator.share({ title: salon.name, text: `Check out ${salon.name} on Nexora`, url: window.location.href });
     } else {
       showToast('Salon link copied to clipboard');
     }
@@ -123,6 +124,20 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
         name: pkg.name,
         durationMin: pkg.durationMin,
         basePrice: pkg.price,
+      });
+    }
+  };
+
+  const handleBookWithStylist = (stylist: SpecialistItem, slotTime?: string) => {
+    if (onBookNowModal) {
+      onBookNowModal(salon, undefined, stylist.id);
+    } else if (salon.services?.[0]) {
+      const srv = salon.services[0];
+      onSelectServiceForSlot(salon, {
+        id: srv.id,
+        name: srv.name,
+        durationMin: srv.durationMin,
+        basePrice: srv.basePrice,
       });
     }
   };
@@ -228,54 +243,121 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
           </div>
         </div>
 
-        {/* Tabs: Services, Packages, Reviews, About */}
-        <div className="flex items-center gap-1 bg-muted/15 p-1 rounded-button border border-border">
-          {(['services', 'packages', 'reviews', 'about'] as const).map((tab) => (
+        {/* Tabs: Services, Stylists, Packages, Reviews, About */}
+        <div className="flex items-center gap-1 bg-muted/15 p-1 rounded-button border border-border overflow-x-auto scrollbar-none">
+          {(['services', 'stylists', 'packages', 'reviews', 'about'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2 rounded-[8px] text-xs font-bold capitalize transition-all cursor-pointer ${
+              className={`flex-1 min-w-[68px] py-2 rounded-[8px] text-xs font-bold capitalize transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === tab
                   ? 'bg-surface text-primary shadow-xs'
                   : 'text-muted hover:text-text'
               }`}
             >
-              {tab}
+              {tab === 'stylists' ? 'Stylists' : tab}
             </button>
           ))}
         </div>
 
         {/* Tab Content */}
         {activeTab === 'services' && (
-          <div className="flex flex-col gap-3">
-            <h3 className="text-xs font-bold text-text uppercase tracking-wider">
-              Available Services & Slots
-            </h3>
-            <div className="flex flex-col gap-2.5">
-              {salon.services?.map((srv) => (
-                <div
-                  key={srv.id}
-                  className="bg-surface rounded-card border border-border/80 p-3.5 flex items-center justify-between gap-3 shadow-xs hover:border-primary/40 transition-all"
-                >
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-text">{srv.name}</h4>
-                    <p className="text-[11px] text-muted mt-0.5">{srv.durationMin} mins • Popular grooming</p>
-                    <span className="text-xs font-extrabold text-primary block mt-1 tabular-nums">
-                      {formatMoney(srv.basePrice)}
-                    </span>
-                  </div>
-
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleSelectService(srv)}
-                    className="shrink-0 font-bold"
-                  >
-                    Select Slot
-                  </Button>
+          <div className="flex flex-col gap-4">
+            {/* Quick Stylists Carousel Preview */}
+            <div className="bg-surface rounded-card border border-border p-3.5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-text uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-primary" /> Meet Our Stylists
+                  </h4>
+                  <p className="text-[11px] text-muted">Book directly with certified salon masters</p>
                 </div>
-              ))}
+                <button
+                  onClick={() => setActiveTab('stylists')}
+                  className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5 cursor-pointer"
+                >
+                  <span>View All</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+
+              <MeetOurStylistsSection
+                salon={salon}
+                onBookWithStylist={handleBookWithStylist}
+                layout="carousel"
+                showFilters={false}
+                title=""
+                subtitle=""
+              />
             </div>
+
+            <div className="flex flex-col gap-3">
+              <h3 className="text-xs font-bold text-text uppercase tracking-wider">
+                Available Services & Slots
+              </h3>
+              <div className="flex flex-col gap-2.5">
+                {salon.services?.map((srv) => (
+                  <div
+                    key={srv.id}
+                    className="bg-surface rounded-card border border-border/80 p-3.5 flex items-center justify-between gap-3 shadow-xs hover:border-primary/40 transition-all"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-text">{srv.name}</h4>
+                      <p className="text-[11px] text-muted mt-0.5">{srv.durationMin} mins • Popular grooming</p>
+                      <span className="text-xs font-extrabold text-primary block mt-1 tabular-nums">
+                        {formatMoney(srv.basePrice)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const isFav = toggleFavoriteService(salon.id, salon.name, srv);
+                          showToast(
+                            isFav
+                              ? `Added "${srv.name}" to favorites`
+                              : `Removed "${srv.name}" from favorites`
+                          );
+                        }}
+                        className="p-2 rounded-full hover:bg-primary-soft text-muted hover:text-accent transition-colors cursor-pointer"
+                        aria-label="Save service to favorites"
+                        title="Save Service to Favorites"
+                      >
+                        <Heart
+                          size={18}
+                          className={
+                            isFavoriteService(srv.id, salon.id)
+                              ? 'fill-accent text-accent'
+                              : 'text-muted'
+                          }
+                        />
+                      </button>
+
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleSelectService(srv)}
+                        className="font-bold"
+                      >
+                        Select Slot
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'stylists' && (
+          <div className="flex flex-col gap-3">
+            <MeetOurStylistsSection
+              salon={salon}
+              onBookWithStylist={handleBookWithStylist}
+              layout="grid"
+              showFilters={true}
+            />
           </div>
         )}
 

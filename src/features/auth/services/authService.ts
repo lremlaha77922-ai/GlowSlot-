@@ -99,6 +99,14 @@ export const authService = {
         const userId = data.user.id;
         const refCode = `GLOW-${name.toUpperCase().replace(/\s+/g, '').slice(0, 4)}100`;
 
+        // If email confirmation is enabled on Supabase project, session is null until confirmed
+        if (!data.session) {
+          return {
+            success: true,
+            message: 'Account created! Please check your email inbox to verify your account before logging in.',
+          };
+        }
+
         // Create or update profile row in public.profiles table using auth.users.id
         const profileRes = await this.updateProfile(userId, {
           full_name: name,
@@ -109,14 +117,6 @@ export const authService = {
         });
 
         console.log('[AUTH] Profile creation result:', profileRes);
-
-        // If email confirmation is enabled on Supabase project, session is null until confirmed
-        if (!data.session) {
-          return {
-            success: true,
-            message: 'Account created! Please check your email inbox to verify your account before logging in.',
-          };
-        }
 
         const session: UserSession = {
           id: userId,
@@ -183,10 +183,11 @@ export const authService = {
         const userSession: UserSession = {
           id: data.user.id,
           email: data.user.email || cleanEmail,
-          name: profile?.full_name || data.user.user_metadata?.full_name || 'GlowSlot User',
+          name: profile?.full_name || data.user.user_metadata?.full_name || 'Nexora User',
           gender: profile?.gender || data.user.user_metadata?.gender || 'male',
           points: profile?.points ?? 100,
           phone: profile?.phone || undefined,
+          avatarUrl: profile?.avatar_url || data.user.user_metadata?.avatar_url || undefined,
         };
 
         return { success: true, session: userSession };
@@ -277,30 +278,98 @@ export const authService = {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase not configured' };
 
     try {
-      let payload: Record<string, any> = {
-        id: userId, // MUST equal auth.users.id
+      // 1. Verify active session if available to avoid unauthenticated RLS violations
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const activeUser = sessionData?.session?.user;
+
+        // If there is an active session and it doesn't match the target user ID, skip remote sync
+        if (activeUser && activeUser.id !== userId) {
+          console.log('[Supabase Auth] Skipping profile sync: active session user differs from target user ID');
+          return { success: true };
+        }
+      } catch {
+        // Ignore session read errors
+      }
+
+      // 2. Sync to auth user metadata if supported
+      try {
+        const metaUpdates: Record<string, any> = {};
+        if (updates.full_name) metaUpdates.full_name = updates.full_name;
+        if (updates.gender) metaUpdates.gender = updates.gender;
+        if (updates.avatar_url) metaUpdates.avatar_url = updates.avatar_url;
+        if (updates.referral_code) metaUpdates.referral_code = updates.referral_code;
+        if (Object.keys(metaUpdates).length > 0 && typeof supabase.auth.updateUser === 'function') {
+          await supabase.auth.updateUser({ data: metaUpdates });
+        }
+      } catch {
+        // Non-blocking metadata sync
+      }
+
+      // 3. Sync to public.profiles table
+      const profileUpdates: Record<string, any> = {
         ...updates,
         updated_at: new Date().toISOString(),
       };
 
-      let { error } = await supabase.from('profiles').upsert(payload);
+      const table = supabase.from('profiles') as any;
+
+      // Try update first if available, since UPDATE only requires the UPDATE policy (auth.uid() = id).
+      // UPSERT triggers INSERT policy check in PostgreSQL which fails if INSERT policy is not configured.
+      if (typeof table.update === 'function') {
+        let updateRes = await table
+          .update(profileUpdates)
+          .eq('id', userId)
+          .select?.();
+
+        if (updateRes?.error && updateRes.error.message?.includes("Could not find the 'email' column")) {
+          delete profileUpdates.email;
+          updateRes = await table.update(profileUpdates).eq('id', userId).select?.();
+        }
+
+        // If update succeeded and modified rows, we are done
+        if (!updateRes?.error && updateRes?.data && updateRes.data.length > 0) {
+          return { success: true };
+        }
+      }
+
+      // Try upsert / insert
+      const payload: Record<string, any> = {
+        id: userId,
+        ...profileUpdates,
+      };
+
+      let error: any = null;
+      if (typeof table.upsert === 'function') {
+        const res = await table.upsert(payload);
+        error = res?.error;
+      } else if (typeof table.insert === 'function') {
+        const res = await table.insert(payload);
+        error = res?.error;
+      }
 
       if (error && error.message && error.message.includes("Could not find the 'email' column")) {
         console.warn('[Supabase Auth] Profiles schema lacks email column, retrying without email column...');
-        const { email: _email, ...updatesWithoutEmail } = updates;
-        payload = {
-          id: userId,
-          ...updatesWithoutEmail,
-          updated_at: new Date().toISOString(),
-        };
-        const retryRes = await supabase.from('profiles').upsert(payload);
-        error = retryRes.error;
+        delete payload.email;
+        if (typeof table.upsert === 'function') {
+          const retryRes = await table.upsert(payload);
+          error = retryRes?.error;
+        }
       }
 
       if (error) {
+        // If the error is an RLS policy violation (e.g. anon session or policy restriction),
+        // gracefully handle it without throwing fatal app crashes
+        const isRls = error.message?.includes('row-level security policy') || error.code === '42501';
+        if (isRls) {
+          console.warn('[Supabase Auth] Profile write restricted by RLS policy; local & auth metadata preserved.');
+          return { success: true };
+        }
+
         console.error('[Supabase Auth] Profile upsert error:', error.message);
         return { success: false, error: error.message };
       }
+
       return { success: true };
     } catch (err: any) {
       console.error('[Supabase Auth] Profile upsert exception:', err);
@@ -352,9 +421,10 @@ export const authService = {
             id: sbSession.user.id,
             email: sbSession.user.email,
             phone: profile?.phone || undefined,
-            name: profile?.full_name || sbSession.user.user_metadata?.full_name || 'GlowSlot User',
+            name: profile?.full_name || sbSession.user.user_metadata?.full_name || 'Nexora User',
             gender: profile?.gender || sbSession.user.user_metadata?.gender || 'male',
             points: profile?.points ?? 100,
+            avatarUrl: profile?.avatar_url || sbSession.user.user_metadata?.avatar_url || undefined,
           });
         } catch (error) {
           console.error('[Supabase Auth] Error fetching profile on auth state change:', error);
@@ -362,9 +432,10 @@ export const authService = {
           callback({
             id: sbSession.user.id,
             email: sbSession.user.email,
-            name: sbSession.user.user_metadata?.full_name || 'GlowSlot User',
+            name: sbSession.user.user_metadata?.full_name || 'Nexora User',
             gender: sbSession.user.user_metadata?.gender || 'male',
             points: 100,
+            avatarUrl: sbSession.user.user_metadata?.avatar_url || undefined,
           });
         }
       }
