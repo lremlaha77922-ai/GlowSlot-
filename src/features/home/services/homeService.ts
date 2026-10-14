@@ -1,10 +1,11 @@
 import { mockBanners, mockQuickServices, mockSalons, mockAreas } from '../../../data/mockData';
 import { PromoBanner, QuickService, Salon } from '../../../types';
+import { studioflowService } from '../../studioflow/studioflowService';
 
 export const homeService = {
   async getBanners(): Promise<PromoBanner[]> {
-    // Simulating async read
-    return Promise.resolve([...mockBanners]);
+    // StudioFlow salon promotions first, then GlowSlot's own banners
+    return [...(await studioflowService.getBanners()), ...mockBanners];
   },
 
   async getQuickServices(): Promise<QuickService[]> {
@@ -12,11 +13,12 @@ export const homeService = {
   },
 
   async getLastMinuteDeals(): Promise<Salon[]> {
-    return Promise.resolve(mockSalons.filter(s => s.isDeal));
+    const sf = (await studioflowService.listSalons()).filter((s) => s.isDeal);
+    return [...sf, ...mockSalons.filter((s) => s.isDeal)];
   },
 
   async getPopularSalons(): Promise<Salon[]> {
-    return Promise.resolve([...mockSalons]);
+    return [...(await studioflowService.listSalons()), ...mockSalons];
   },
 
   async getAvailableAreas(): Promise<string[]> {

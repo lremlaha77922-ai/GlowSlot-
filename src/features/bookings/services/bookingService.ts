@@ -3,6 +3,8 @@ import { Booking, BookingReview, PaymentMethod, UserAddress } from '../../../typ
 import { getFriendlyErrorMessage } from '../../../services/errors';
 import { userService } from '../../profile/services/userService';
 import { referralService } from '../../profile/services/referralService';
+import { studioflowService } from '../../studioflow/studioflowService';
+import { isStudioflowId } from '../../studioflow/studioflowMapper';
 
 const STORAGE_KEY = 'glowslot_bookings';
 
@@ -152,6 +154,11 @@ const saveStoredBookings = (bookings: Booking[]) => {
 
 export const bookingService = {
   async getBookings(userId?: string): Promise<Booking[]> {
+    const [native, sf] = await Promise.all([this.getNativeBookings(userId), studioflowService.myBookings().catch(() => [] as Booking[])]);
+    return [...sf, ...native].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  },
+
+  async getNativeBookings(userId?: string): Promise<Booking[]> {
     if (userId && isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
       try {
         const { data, error } = await supabase
@@ -591,7 +598,17 @@ export const bookingService = {
     paymentMethod: PaymentMethod;
     specialInstructions?: string;
     idempotencyKey?: string;
-  }): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+    customerName?: string;
+    customerPhone?: string;
+  }): Promise<{ success: boolean; booking?: Booking; error?: string; authRequired?: boolean }> {
+    if (isStudioflowId(params.slotId)) {
+      // StudioFlow salon: book through the shared RPC, then collect the mandatory 25% deposit via Razorpay.
+      return studioflowService.bookAndPay({
+        slotId: params.slotId,
+        clientName: params.customerName || '',
+        clientPhone: params.customerPhone || '',
+      });
+    }
     if (params.userId && isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
       try {
         const { data, error } = await supabase.rpc('create_booking_v2', {
@@ -775,6 +792,10 @@ export const bookingService = {
     reason: string,
     userId?: string
   ): Promise<{ success: boolean; refundAmountPaise: number; refundPercent: number; error?: string }> {
+    if (isStudioflowId(bookingId)) {
+      const res = await studioflowService.cancel(bookingId);
+      return { success: res.success, refundAmountPaise: 0, refundPercent: 0, error: res.error };
+    }
     const { refundAmountPaise: localRefund, refundPercent: localPercent } = this.calculateRefund(await this.getBookingById(bookingId, userId) as Booking);
 
     if (userId && isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {

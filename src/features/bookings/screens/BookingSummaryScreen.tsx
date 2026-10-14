@@ -8,6 +8,8 @@ import { slotService } from '../../slots/services/slotService';
 import { paymentService } from '../services/paymentService';
 import { bookingService } from '../../bookings/services/bookingService';
 import { NexoraPaymentScreen } from './NexoraPaymentScreen';
+import { isStudioflowId } from '../../studioflow/studioflowMapper';
+import { StudioflowAccountSheet } from '../../studioflow/StudioflowAccountSheet';
 import {
   ArrowLeft,
   Building2,
@@ -119,6 +121,53 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
     showToast('Special instructions updated');
   };
 
+  const [showSfAuth, setShowSfAuth] = useState(false);
+
+  // StudioFlow salons: book through the shared website backend and pay the 25% deposit via Razorpay.
+  const handleStudioflowBooking = async () => {
+    setIsProcessingPayment(true);
+    try {
+      const res = await bookingService.createBooking({
+        userId: user?.id || 'guest',
+        slotId: slot.id,
+        salonId: salon.id,
+        salonName: salon.name,
+        salonAddress: salon.address,
+        services: services.map((s) => ({ name: s.name, durationMin: s.durationMin, price: s.basePrice, qty: 1 })),
+        slot: { date: slot.date, time: slot.time },
+        subtotalPaise: pricingSummary.subtotal,
+        platformFeePaise: 0,
+        taxPaise: 0,
+        couponDiscountPaise: pricingSummary.discount,
+        pointsDiscountPaise: 0,
+        totalPaise: pricingSummary.total,
+        paymentMethod: 'upi',
+        customerName: customerDetails.name,
+        customerPhone: customerDetails.phone,
+      });
+      if (res.authRequired) {
+        setShowSfAuth(true);
+        return;
+      }
+      if (!res.success || !res.booking) {
+        showToast(res.error || 'Booking could not be completed.');
+        return;
+      }
+      showToast(`Booking confirmed! Reference: ${res.booking.id.replace('sf:', '').slice(0, 8).toUpperCase()}`);
+      onConfirmPayment({
+        salon,
+        services,
+        specialist,
+        slot,
+        customerDetails: { ...customerDetails, specialInstructions: noteInput || customerDetails.specialInstructions },
+        pricingSummary: { ...pricingSummary, convenienceFee: 0, total: pricingSummary.total, deposit: Math.round(pricingSummary.total * 0.25), balanceAtSalon: pricingSummary.total - Math.round(pricingSummary.total * 0.25) },
+        bookingId: res.booking.id,
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
   const handlePayAndLockSlot = async () => {
     console.log('[Nexora] Continue to QR Payment clicked, isProcessingPayment:', isProcessingPayment);
     
@@ -133,6 +182,11 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
     if (!services || services.length === 0) {
       console.error('[Nexora] Payment transition blocked: No services', services);
       showToast('No services selected.');
+      return;
+    }
+
+    if (isStudioflowId(salon.id)) {
+      await handleStudioflowBooking();
       return;
     }
 
@@ -270,6 +324,11 @@ export const BookingSummaryScreen: React.FC<BookingSummaryScreenProps> = ({
 
   return (
     <div className="min-h-screen bg-bg text-text pb-36">
+      <StudioflowAccountSheet
+        isOpen={showSfAuth}
+        onClose={() => setShowSfAuth(false)}
+        onSignedIn={() => { setShowSfAuth(false); void handleStudioflowBooking(); }}
+      />
       {/* Header */}
       <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-border px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-3">

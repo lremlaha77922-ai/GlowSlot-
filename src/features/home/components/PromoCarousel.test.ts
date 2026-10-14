@@ -9,7 +9,7 @@ const mockBanners: PromoBanner[] = [
     tag: 'Limited Time',
     bgGradient: 'from-amber-600 to-rose-700',
     imageUrl: '',
-    actionUrl: '/explore',
+    link: '/explore',
   },
   {
     id: 'ban-2',
@@ -18,7 +18,7 @@ const mockBanners: PromoBanner[] = [
     tag: 'Seasonal',
     bgGradient: 'from-purple-600 to-indigo-700',
     imageUrl: '',
-    actionUrl: '/explore',
+    link: '/explore',
   },
 ];
 

@@ -1,5 +1,7 @@
 import { supabase, isSupabaseConfigured } from '../../../lib/supabase';
 import { mockSalons, mockBanners } from '../../../data/mockData';
+import { studioflowService } from '../../studioflow/studioflowService';
+import { isStudioflowId } from '../../studioflow/studioflowMapper';
 import { Salon, FilterOptions, PromoBanner, SalonServiceItem, PackageItem, ReviewItem } from '../../../types';
 
 export const salonService = {
@@ -31,7 +33,24 @@ export const salonService = {
     };
   },
 
+  /** GlowSlot salons + every published StudioFlow website, filtered the same way. */
   async list(filters?: Partial<FilterOptions>, query?: string): Promise<Salon[]> {
+    const base = await this.listNative(filters, query);
+    const sf = (await studioflowService.listSalons()).filter((s) => {
+      if (query && query.trim()) {
+        const q = query.toLowerCase().trim();
+        if (!(s.name.toLowerCase().includes(q) || s.area.toLowerCase().includes(q) || s.categories.some((c) => c.toLowerCase().includes(q)))) return false;
+      }
+      if (filters?.category && filters.category !== 'All' && !s.categories.includes(filters.category)) return false;
+      if (filters?.offersOnly && !s.isDeal) return false;
+      if (filters?.rating4PlusOnly && s.rating < 4.0) return false;
+      if (filters?.minPrice !== undefined && filters?.maxPrice !== undefined && (s.startingPrice < filters.minPrice || s.startingPrice > filters.maxPrice)) return false;
+      return true;
+    });
+    return [...base, ...sf];
+  },
+
+  async listNative(filters?: Partial<FilterOptions>, query?: string): Promise<Salon[]> {
     if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
       try {
         let dbQuery = supabase.from('salons').select('*').eq('is_open', true);
@@ -200,6 +219,7 @@ export const salonService = {
   },
 
   async getById(id: string): Promise<Salon | null> {
+    if (isStudioflowId(id)) return studioflowService.getSalon(id);
     if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
       try {
         const { data, error } = await supabase.rpc('get_active_salon_details', { p_salon_id: id });
@@ -227,6 +247,11 @@ export const salonService = {
   },
 
   async getBanners(): Promise<PromoBanner[]> {
+    const native = await this.getNativeBanners();
+    return [...(await studioflowService.getBanners()), ...native];
+  },
+
+  async getNativeBanners(): Promise<PromoBanner[]> {
     if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
       try {
         const { data, error } = await supabase

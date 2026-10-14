@@ -2,6 +2,8 @@ import { supabase, isSupabaseConfigured } from '../../../lib/supabase';
 import { SlotItem, SlotStatus } from '../../../types';
 import { calculateSlotPrice } from '../../../utils/pricing';
 import { getFriendlyErrorMessage } from '../../../services/errors';
+import { studioflowService } from '../../studioflow/studioflowService';
+import { isStudioflowId } from '../../studioflow/studioflowMapper';
 
 export interface HoldResult {
   success: boolean;
@@ -17,6 +19,9 @@ export const slotService = {
     basePricePaise: number,
     userId?: string
   ): Promise<SlotItem[]> {
+    if (isStudioflowId(salonId)) {
+      return studioflowService.getSlots(salonId, serviceId, date, basePricePaise);
+    }
     if (isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
       try {
         const { data, error } = await supabase
@@ -99,6 +104,10 @@ export const slotService = {
   },
 
   async holdSlot(slotId: string, userId?: string): Promise<HoldResult> {
+    if (isStudioflowId(slotId)) {
+      // StudioFlow reserves the slot atomically (15 min) inside studioflow_book.
+      return { success: true, heldUntil: new Date(Date.now() + 5 * 60 * 1000).toISOString() };
+    }
     if (userId && isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
       try {
         const { data, error } = await supabase.rpc('hold_slot', {
@@ -138,6 +147,7 @@ export const slotService = {
   },
 
   async releaseSlot(slotId: string, userId?: string): Promise<boolean> {
+    if (isStudioflowId(slotId)) return true;
     if (userId && isSupabaseConfigured() && import.meta.env.VITE_USE_MOCK_DATA !== 'true') {
       try {
         await supabase.rpc('release_slot', {
@@ -161,6 +171,7 @@ export const slotService = {
     date: string,
     onUpdate: () => void
   ) {
+    if (isStudioflowId(salonId)) return studioflowService.subscribeToSlots(onUpdate);
     if (!isSupabaseConfigured() || import.meta.env.VITE_USE_MOCK_DATA === 'true') {
       return { unsubscribe: () => {} };
     }
