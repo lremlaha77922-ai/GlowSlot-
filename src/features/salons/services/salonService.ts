@@ -44,10 +44,31 @@ export const salonService = {
       if (filters?.category && filters.category !== 'All' && !s.categories.includes(filters.category)) return false;
       if (filters?.offersOnly && !s.isDeal) return false;
       if (filters?.rating4PlusOnly && s.rating < 4.0) return false;
-      if (filters?.minPrice !== undefined && filters?.maxPrice !== undefined && (s.startingPrice < filters.minPrice || s.startingPrice > filters.maxPrice)) return false;
+      if (filters?.minPrice !== undefined && s.startingPrice < filters.minPrice) return false;
+      if (filters?.maxPrice !== undefined && s.startingPrice > filters.maxPrice) return false;
+      if (filters?.maxDistanceKm !== undefined && s.distanceKm > filters.maxDistanceKm) return false;
       return true;
     });
-    return [...base, ...sf];
+
+    let combined = [...base, ...sf];
+
+    if (filters?.maxDistanceKm !== undefined) {
+      combined = combined.filter((s) => s.distanceKm <= filters.maxDistanceKm!);
+    }
+
+    if (filters?.sortBy) {
+      if (filters.sortBy === 'distance') {
+        combined.sort((a, b) => a.distanceKm - b.distanceKm);
+      } else if (filters.sortBy === 'rating') {
+        combined.sort((a, b) => b.rating - a.rating);
+      } else if (filters.sortBy === 'price') {
+        combined.sort((a, b) => a.startingPrice - b.startingPrice);
+      } else if (filters.sortBy === 'price_desc') {
+        combined.sort((a, b) => b.startingPrice - a.startingPrice);
+      }
+    }
+
+    return combined;
   },
 
   async listNative(filters?: Partial<FilterOptions>, query?: string): Promise<Salon[]> {
@@ -123,6 +144,10 @@ export const salonService = {
         result = result.filter((s) => !!s.isDeal);
       }
 
+      if (filters.maxDistanceKm !== undefined) {
+        result = result.filter((s) => s.distanceKm <= filters.maxDistanceKm!);
+      }
+
       if (filters.sortBy) {
         if (filters.sortBy === 'distance') {
           result.sort((a, b) => a.distanceKm - b.distanceKm);
@@ -130,6 +155,8 @@ export const salonService = {
           result.sort((a, b) => b.rating - a.rating);
         } else if (filters.sortBy === 'price') {
           result.sort((a, b) => a.startingPrice - b.startingPrice);
+        } else if (filters.sortBy === 'price_desc') {
+          result.sort((a, b) => b.startingPrice - a.startingPrice);
         }
       }
     }

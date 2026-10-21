@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { Booking } from '../../../types';
 import { useSessionStore } from '../../../store/useSessionStore';
 import { useUIStore } from '../../../store/useUIStore';
 import { LogoutConfirmSheet } from '../components/LogoutConfirmSheet';
 import { DeleteAccountSheet } from '../components/DeleteAccountSheet';
+import { AppointmentHistorySection } from '../components/AppointmentHistorySection';
 import {
   ArrowLeft,
   ChevronRight,
@@ -26,6 +28,12 @@ interface ProfileMainScreenProps {
   onBack: () => void;
   onEditProfile: () => void;
   onBookingHistory?: () => void;
+  onSelectBooking?: (bookingId: string) => void;
+  onRebook?: (booking: Booking) => void;
+  onRebookService?: (
+    booking: Booking,
+    service: { name: string; durationMin: number; price: number }
+  ) => void;
   onSavedAddresses: () => void;
   onFavouriteSalons: () => void;
   onWalletPoints: () => void;
@@ -35,12 +43,16 @@ interface ProfileMainScreenProps {
   onTermsPrivacy: () => void;
   onLoggedOut: () => void;
   onAdminDashboard?: () => void;
+  onExploreSalons?: () => void;
 }
 
 export const ProfileMainScreen: React.FC<ProfileMainScreenProps> = ({
   onBack,
   onEditProfile,
   onBookingHistory,
+  onSelectBooking,
+  onRebook,
+  onRebookService,
   onSavedAddresses,
   onFavouriteSalons,
   onWalletPoints,
@@ -50,6 +62,7 @@ export const ProfileMainScreen: React.FC<ProfileMainScreenProps> = ({
   onTermsPrivacy,
   onLoggedOut,
   onAdminDashboard,
+  onExploreSalons,
 }) => {
   const { user, isGuest, logout, deleteAccount } = useSessionStore();
   const { showToast } = useUIStore();
@@ -134,6 +147,16 @@ export const ProfileMainScreen: React.FC<ProfileMainScreenProps> = ({
             </button>
           )}
         </div>
+
+        {/* Appointment History Section: Track past salon visits & rebook favorite services */}
+        <AppointmentHistorySection
+          onViewAllHistory={onBookingHistory || (() => {})}
+          onSelectBooking={(id) => onSelectBooking?.(id)}
+          onRebookVisit={(booking) => onRebook?.(booking)}
+          onRebookService={(booking, srv) => onRebookService?.(booking, srv)}
+          onExploreSalons={onExploreSalons}
+          onWalletPoints={onWalletPoints}
+        />
 
         {/* 1. Account Group */}
         <div className="bg-surface rounded-card border border-border shadow-level-1 overflow-hidden divide-y divide-border">

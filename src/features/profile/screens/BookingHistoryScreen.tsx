@@ -27,12 +27,17 @@ interface BookingHistoryScreenProps {
   onBack: () => void;
   onSelectBooking?: (bookingId: string) => void;
   onRebook?: (booking: Booking) => void;
+  onRebookService?: (
+    booking: Booking,
+    service: { name: string; durationMin: number; price: number }
+  ) => void;
 }
 
 export const BookingHistoryScreen: React.FC<BookingHistoryScreenProps> = ({
   onBack,
   onSelectBooking,
   onRebook,
+  onRebookService,
 }) => {
   const { user } = useSessionStore();
   const { showToast } = useUIStore();
@@ -233,7 +238,23 @@ export const BookingHistoryScreen: React.FC<BookingHistoryScreenProps> = ({
                           <Scissors size={11} className="text-primary/70 shrink-0" />
                           <span>{srv.name}</span>
                         </span>
-                        <span className="text-muted tabular-nums">{formatMoney(srv.price)}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted tabular-nums">{formatMoney(srv.price)}</span>
+                          {b.status === 'completed' && onRebookService && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRebookService(b, srv);
+                              }}
+                              className="text-[10px] font-bold text-primary hover:underline flex items-center gap-0.5 cursor-pointer py-0.5 px-1.5 rounded-button hover:bg-primary-soft/50 transition-colors"
+                              title={`Rebook ${srv.name}`}
+                              aria-label={`Rebook ${srv.name}`}
+                            >
+                              <RotateCcw size={9} />
+                              <span>Rebook</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

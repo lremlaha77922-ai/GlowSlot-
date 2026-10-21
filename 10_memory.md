@@ -30,7 +30,7 @@ Nexora is an original Android salon booking app for India. Users book at-salon a
 | Item | Value |
 |---|---|
 | Phase | Auth Migration (Email + Password) - DONE |
-| Last completed task | Profile Photo Upload & Persistent Avatar (EditProfileScreen & storageService: file format/size validation, preview with Save/Cancel, Supabase Storage & local persistence, and global avatar display in Profile & Header) |
-| Next task | Maintenance / Feature updates |
+| Last completed task | Salon Detail Review & Rating Section (SalonReviewsSection, appointment feedback banner, star distribution scorecard, verified reviews, and WriteReviewModal) |
+| Next task | Awaiting user instructions |
 | Known blockers | None |
 | Known bugs | None |

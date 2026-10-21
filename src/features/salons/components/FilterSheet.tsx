@@ -53,11 +53,12 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
           <label className="text-xs font-bold text-text uppercase tracking-wider block mb-2">
             Sort By
           </label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {[
-              { id: 'distance', label: 'Distance' },
-              { id: 'rating', label: 'Rating' },
-              { id: 'price', label: 'Price' },
+              { id: 'distance', label: '📍 Nearest First' },
+              { id: 'price', label: '💰 Price: Low to High' },
+              { id: 'price_desc', label: '💎 Price: High to Low' },
+              { id: 'rating', label: '⭐ Top Rated' },
             ].map((option) => (
               <button
                 key={option.id}
@@ -76,6 +77,38 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
           </div>
         </div>
 
+        {/* Distance Radius */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-bold text-text uppercase tracking-wider">
+              Distance Radius
+            </label>
+            <span className="text-xs font-semibold text-primary">
+              {draft.maxDistanceKm ? `Within ${draft.maxDistanceKm} km` : 'Any Distance'}
+            </span>
+          </div>
+          <div className="grid grid-cols-4 gap-1.5">
+            {[
+              { label: 'Any', value: undefined },
+              { label: '< 2 km', value: 2 },
+              { label: '< 5 km', value: 5 },
+              { label: '< 10 km', value: 10 },
+            ].map((d) => (
+              <button
+                key={d.label}
+                onClick={() => setDraft({ ...draft, maxDistanceKm: d.value })}
+                className={`py-1.5 px-2 rounded-chip text-xs font-bold border transition-all cursor-pointer ${
+                  draft.maxDistanceKm === d.value
+                    ? 'bg-primary text-white border-primary shadow-xs'
+                    : 'bg-surface text-muted border-border hover:border-primary/50'
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Price Range */}
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -88,18 +121,19 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
           </div>
           <input
             type="range"
-            min={15000}
-            max={50000}
+            min={10000}
+            max={80000}
             step={5000}
-            value={draft.maxPrice}
+            value={Math.min(draft.maxPrice, 80000)}
             onChange={(e) =>
               setDraft({ ...draft, maxPrice: parseInt(e.target.value, 10) })
             }
             className="w-full accent-primary h-2 bg-border rounded-lg cursor-pointer"
           />
           <div className="flex justify-between text-[11px] text-muted mt-1 tabular-nums">
-            <span>{formatMoney(15000)}</span>
-            <span>{formatMoney(50000)}</span>
+            <span>{formatMoney(10000)}</span>
+            <span>{formatMoney(40000)}</span>
+            <span>{formatMoney(80000)}+</span>
           </div>
         </div>
 

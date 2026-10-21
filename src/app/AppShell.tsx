@@ -438,6 +438,25 @@ export const AppShell: React.FC = () => {
     showToast(`Welcome back to ${salon.name}! Select services to rebook.`);
   };
 
+  const handleRebookService = (
+    booking: Booking,
+    serviceItem: { name: string; durationMin: number; price: number }
+  ) => {
+    const salon =
+      mockSalons.find((s) => s.name === booking.salonName) || mockSalons[0];
+    setSlotPickerContext({
+      salon,
+      service: {
+        id: 'srv-rebook-' + Date.now(),
+        name: serviceItem.name,
+        durationMin: serviceItem.durationMin || 30,
+        basePrice: serviceItem.price,
+      },
+    });
+    setCurrentView('slotPicker');
+    showToast(`Rebooking ${serviceItem.name} at ${salon.name}! Choose your slot.`);
+  };
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-bg text-text font-sans flex flex-col max-w-lg mx-auto relative shadow-2xl overflow-x-hidden selection:bg-primary-soft selection:text-primary">
@@ -615,6 +634,12 @@ export const AppShell: React.FC = () => {
             onBack={() => setCurrentView('tabs')}
             onEditProfile={() => setCurrentView('editProfile')}
             onBookingHistory={() => setCurrentView('bookingHistory')}
+            onSelectBooking={(id) => {
+              setSelectedBookingId(id);
+              setCurrentView('bookingDetail');
+            }}
+            onRebook={handleRebook}
+            onRebookService={handleRebookService}
             onSavedAddresses={() => setCurrentView('savedAddresses')}
             onFavouriteSalons={() => setCurrentView('favouriteSalons')}
             onWalletPoints={() => setCurrentView('walletPoints')}
@@ -624,6 +649,10 @@ export const AppShell: React.FC = () => {
             onTermsPrivacy={() => setCurrentView('termsPrivacy')}
             onAdminDashboard={() => setCurrentView('adminDashboard')}
             onLoggedOut={() => setCurrentView('login')}
+            onExploreSalons={() => {
+              setActiveTab('salons');
+              setCurrentView('tabs');
+            }}
           />
         )}
 
@@ -635,6 +664,7 @@ export const AppShell: React.FC = () => {
               setCurrentView('bookingDetail');
             }}
             onRebook={handleRebook}
+            onRebookService={handleRebookService}
           />
         )}
 

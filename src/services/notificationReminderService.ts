@@ -9,7 +9,7 @@ export interface AppointmentReminder {
   scheduledTime: Date;
   diffMinutes: number;
   message: string;
-  type: 'upcoming_2h' | 'starting_soon';
+  type: 'upcoming_2h' | 'starting_soon' | 'upcoming_24h';
 }
 
 const REMINDER_KEY_PREFIX = 'nexora_reminder_sent_';
@@ -53,8 +53,7 @@ function removeStoredReminder(key: string): void {
 export const notificationReminderService = {
   /**
    * Checks if an appointment is eligible for a 2-hour reminder.
-   * Eligible if scheduled time is between 0 and 125 minutes away (giving a flexible 2-hour window).
-   * Also ensures idempotency via localStorage cache so users aren't spammed.
+   * Eligible if scheduled time is between 0 and 125 minutes away.
    */
   checkBookingEligibleFor2HourReminder(
     booking: Booking,
@@ -73,7 +72,7 @@ export const notificationReminderService = {
       const diffMs = scheduledTime.getTime() - now.getTime();
       const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
-      // 2-hour reminder window: between 0 and 120 minutes (up to 2h 5m for safety buffer)
+      // 2-hour reminder window: between 0 and 125 minutes
       if (diffMinutes > 0 && diffMinutes <= 125) {
         const key = `${REMINDER_KEY_PREFIX}2h_${booking.id}`;
         const alreadySent = getStoredReminder(key);
@@ -104,7 +103,58 @@ export const notificationReminderService = {
         }
       }
     } catch (err) {
-      console.error('[NotificationReminderService] Error checking booking:', err);
+      console.error('[NotificationReminderService] Error checking 2h booking:', err);
+    }
+
+    return { isEligible: false };
+  },
+
+  /**
+   * Checks if an appointment is eligible for a 24-hour reminder.
+   * Eligible if scheduled time is between 125 minutes and 1450 minutes (~24 hours) away.
+   */
+  checkBookingEligibleFor24HourReminder(
+    booking: Booking,
+    now: Date = new Date()
+  ): { isEligible: boolean; reminder?: AppointmentReminder } {
+    if (booking.status !== 'upcoming') {
+      return { isEligible: false };
+    }
+
+    try {
+      const scheduledTime = new Date(`${booking.slot.date}T${booking.slot.time}:00`);
+      if (isNaN(scheduledTime.getTime())) {
+        return { isEligible: false };
+      }
+
+      const diffMs = scheduledTime.getTime() - now.getTime();
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+      // 24-hour reminder window: between 125 minutes and 1450 minutes (~24 hours)
+      if (diffMinutes > 125 && diffMinutes <= 1450) {
+        const key = `${REMINDER_KEY_PREFIX}24h_${booking.id}`;
+        const alreadySent = getStoredReminder(key);
+
+        if (!alreadySent) {
+          const hoursLeft = Math.round(diffMinutes / 60);
+
+          return {
+            isEligible: true,
+            reminder: {
+              bookingId: booking.id,
+              salonName: booking.salonName,
+              slotDate: booking.slot.date,
+              slotTime: booking.slot.time,
+              scheduledTime,
+              diffMinutes,
+              message: `📅 Upcoming Reminder: Your appointment at ${booking.salonName} is tomorrow (${booking.slot.date} at ${booking.slot.time})!`,
+              type: 'upcoming_24h',
+            },
+          };
+        }
+      }
+    } catch (err) {
+      console.error('[NotificationReminderService] Error checking 24h booking:', err);
     }
 
     return { isEligible: false };
@@ -122,6 +172,7 @@ export const notificationReminderService = {
    */
   clearReminderSent(bookingId: string): void {
     removeStoredReminder(`${REMINDER_KEY_PREFIX}2h_${bookingId}`);
+    removeStoredReminder(`${REMINDER_KEY_PREFIX}24h_${bookingId}`);
   },
 
   /**
@@ -157,7 +208,7 @@ export const notificationReminderService = {
   },
 
   /**
-   * Scans all user upcoming bookings and returns reminders that need to be triggered right now.
+   * Scans all user upcoming bookings and returns reminders that need to be triggered right now (prioritizing 2h, then 24h).
    */
   async evaluateUpcomingReminders(userId?: string): Promise<AppointmentReminder[]> {
     try {
@@ -166,9 +217,17 @@ export const notificationReminderService = {
       const now = new Date();
 
       for (const booking of bookings) {
-        const check = this.checkBookingEligibleFor2HourReminder(booking, now);
-        if (check.isEligible && check.reminder) {
-          reminders.push(check.reminder);
+        // First check 2-hour window
+        const check2h = this.checkBookingEligibleFor2HourReminder(booking, now);
+        if (check2h.isEligible && check2h.reminder) {
+          reminders.push(check2h.reminder);
+          continue;
+        }
+
+        // Then check 24-hour window
+        const check24h = this.checkBookingEligibleFor24HourReminder(booking, now);
+        if (check24h.isEligible && check24h.reminder) {
+          reminders.push(check24h.reminder);
         }
       }
 

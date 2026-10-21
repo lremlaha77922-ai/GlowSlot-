@@ -12,7 +12,7 @@ import { PullToRefresh } from '../../../components/PullToRefresh';
 import { AppointmentReminderBanner } from '../../bookings/components/AppointmentReminderBanner';
 import { AppointmentReminder } from '../../../services/notificationReminderService';
 import { useUIStore } from '../../../store/useUIStore';
-import { festivalBanners, discountBanners, mockQuickServices, mockSalons } from '../../../data/mockData';
+import { festivalBanners, discountBanners, jaipurFestiveBanners, mockQuickServices, mockSalons } from '../../../data/mockData';
 
 interface HomeScreenProps {
   onOpenLocation: () => void;
@@ -82,6 +82,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         {/* Quick Services Section */}
         <QuickServicesSection services={mockQuickServices} onSelectSalon={onSelectSalon} />
+
+        {/* Jaipur Festive Specials Carousel */}
+        <PromoCarousel sectionTitle="Jaipur Festive Specials" banners={jaipurFestiveBanners} />
 
         {/* SECTION 2 — Special Discounts Carousel */}
         <PromoCarousel sectionTitle="Special Discounts" banners={discountBanners} />

@@ -179,6 +179,7 @@ Last updated: 2026-10-02  |  Current phase: **Phase 6B (DONE)**  |  Prompts: `12
 | 6C.9 | Refer-a-Friend Loyalty Points on First Booking | DONE | Automatically awards loyalty points to referrer when referred friend completes their first booking |
 | 6C.10 | Meet Our Stylists Section & Profiles | DONE | Interactive stylist profiles, specializations, real-time availability slots, and direct booking integration |
 | 6C.11 | My Bookings Tab & Historical Salon Visit Log | DONE | Upcoming appointments and historical log of completed salon visits with status indicators (Confirmed, Completed, Cancelled) and filter segments |
+| 6C.12 | Salon Detail Review & Rating Section | DONE | Comprehensive review and rating section in salon detail view with appointment feedback callout, rating breakdown, verified reviews, and interactive WriteReviewModal |
 
 ---
 

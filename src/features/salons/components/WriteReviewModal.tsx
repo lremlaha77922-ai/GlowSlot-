@@ -10,6 +10,9 @@ interface WriteReviewModalProps {
   onClose: () => void;
   salonName: string;
   onSubmitReview: (review: ReviewItem) => void;
+  initialRating?: number;
+  serviceName?: string;
+  appointmentDate?: string;
 }
 
 const REVIEW_TAGS = [
@@ -34,13 +37,22 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
   onClose,
   salonName,
   onSubmitReview,
+  initialRating = 5,
+  serviceName,
+  appointmentDate,
 }) => {
-  const [rating, setRating] = useState<number>(5);
+  const [rating, setRating] = useState<number>(initialRating);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [comment, setComment] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>(['Great Service', 'Clean Environment']);
   const [photos, setPhotos] = useState<string[]>([]);
   const { showToast } = useUIStore();
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setRating(initialRating || 5);
+    }
+  }, [isOpen, initialRating]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -90,6 +102,9 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
       tags: selectedTags,
       comment: comment.trim(),
       images: photos,
+      serviceName: serviceName || 'Salon Grooming',
+      verifiedAppointment: true,
+      helpfulCount: 0,
     };
 
     onSubmitReview(newReview);
@@ -108,6 +123,15 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
         <div>
           <p className="text-xs text-muted">Share your grooming experience at</p>
           <h3 className="text-sm font-bold text-text">{salonName}</h3>
+          {(serviceName || appointmentDate) && (
+            <div className="mt-2 p-2.5 rounded-button bg-success/10 border border-success/20 flex items-center gap-2">
+              <Check size={14} className="text-success shrink-0" />
+              <div className="text-[11px] text-text">
+                <span className="font-bold text-success">Verified Appointment: </span>
+                {serviceName || 'Grooming Visit'} {appointmentDate ? `on ${appointmentDate}` : ''}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Rating Stars */}

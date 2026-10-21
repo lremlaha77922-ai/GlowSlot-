@@ -103,6 +103,33 @@ export const festivalBanners: PromoBanner[] = [
   },
 ];
 
+export const jaipurFestiveBanners: PromoBanner[] = [
+  {
+    id: 'jp-1',
+    title: 'Jaipur Royal Bride Wedding Package',
+    subtitle: 'HD airbrush makeup, gold facial, royal hair styling & draping — ₹4,999',
+    tag: 'Jaipur Special',
+    bgGradient: 'from-amber-950/95 via-rose-950/85 to-stone-900/70',
+    imageUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'jp-2',
+    title: 'Pink City Heritage Groom Suite',
+    subtitle: 'Classic royal shave, beard sculpting, herbal detox & hair styling — ₹1,999',
+    tag: 'Wedding Groom',
+    bgGradient: 'from-stone-950/95 via-amber-950/85 to-neutral-900/70',
+    imageUrl: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'jp-3',
+    title: 'Diwali & Wedding Festive Glow Facial',
+    subtitle: 'Saffron & 24K gold dust infusion for radiant seasonal event skin — ₹1,499',
+    tag: 'Festive Special',
+    bgGradient: 'from-purple-950/95 via-indigo-950/85 to-stone-900/70',
+    imageUrl: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1200&q=80',
+  },
+];
+
 export const discountBanners: PromoBanner[] = [
   {
     id: 'disc-1',

@@ -60,6 +60,9 @@ export interface ReviewItem {
   comment: string;
   images?: string[];
   userAvatar?: string;
+  serviceName?: string;
+  verifiedAppointment?: boolean;
+  helpfulCount?: number;
 }
 
 export interface Salon {
@@ -160,9 +163,10 @@ export interface UserSession {
 export interface FilterOptions {
   gender: 'all' | 'male' | 'female';
   category: string;
-  sortBy: 'distance' | 'rating' | 'price';
+  sortBy: 'distance' | 'rating' | 'price' | 'price_desc' | 'popular';
   minPrice: number;
   maxPrice: number;
+  maxDistanceKm?: number;
   openNowOnly: boolean;
   rating4PlusOnly: boolean;
   offersOnly: boolean;

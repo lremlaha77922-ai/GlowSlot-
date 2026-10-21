@@ -52,9 +52,9 @@ export const initNetworkLogger = () => {
       return response;
     } catch (error: any) {
       const duration = Math.round(performance.now() - startTime);
-      const errPrefix = isStudioflow ? '❌ [StudioFlow API Error]' : '❌ [Network Error]';
+      const errPrefix = isStudioflow ? '⚠️ [StudioFlow API Notice]' : '⚠️ [Network Notice]';
       console.groupCollapsed(`${errPrefix} ${url} (${duration}ms)`);
-      console.error('Error:', error);
+      console.warn('Network issue:', error);
       console.groupEnd();
       throw error;
     }

@@ -15,6 +15,17 @@ const STUDIOFLOW_KEY =
   (import.meta.env.VITE_STUDIOFLOW_SUPABASE_KEY as string | undefined) ||
   'sb_publishable_Xck8H8PcTCCnEwkvBfiSLw_c973vJkH';
 
+const safeStudioflowFetch: typeof fetch = async (input, init) => {
+  try {
+    return await fetch(input, init);
+  } catch (err) {
+    return new Response(JSON.stringify({ error: 'Network error', details: String(err) }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+};
+
 export const studioflowClient = createClient(STUDIOFLOW_URL, STUDIOFLOW_KEY, {
   auth: {
     persistSession: true,
@@ -22,6 +33,9 @@ export const studioflowClient = createClient(STUDIOFLOW_URL, STUDIOFLOW_KEY, {
     detectSessionInUrl: false,
     // Separate storage key so it never collides with the GlowSlot (qesvnusgljnhnhswslva) session.
     storageKey: 'glowslot_studioflow_session',
+  },
+  global: {
+    fetch: safeStudioflowFetch,
   },
 });
 

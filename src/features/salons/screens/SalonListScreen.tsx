@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Salon, FilterOptions } from '../../../types';
 import { salonService } from '../services/salonService';
 import { FilterSheet } from '../components/FilterSheet';
+import { SalonDiscoveryFilterBar } from '../components/SalonDiscoveryFilterBar';
 import { SalonCard } from '../../../components/SalonCard';
 import { InteractiveSalonMap } from '../../../components/InteractiveSalonMap';
 import { formatMoney } from '../../../utils/money';
@@ -66,8 +67,9 @@ export const SalonListScreen: React.FC<SalonListScreenProps> = ({
     gender: 'all',
     category: 'All',
     sortBy: 'distance',
-    minPrice: 10000,
-    maxPrice: 50000,
+    minPrice: 0,
+    maxPrice: 100000,
+    maxDistanceKm: undefined,
     openNowOnly: false,
     rating4PlusOnly: false,
     offersOnly: false,
@@ -201,23 +203,6 @@ export const SalonListScreen: React.FC<SalonListScreenProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mb-2">
-            <button
-              onClick={() => setFilters({ ...filters, openNowOnly: !filters.openNowOnly })}
-              className={`px-3 py-1.5 rounded-chip text-[10px] font-bold border transition-colors flex items-center gap-1.5 ${
-                filters.openNowOnly 
-                  ? 'bg-success/15 text-success border-success' 
-                  : 'bg-surface text-muted border-border'
-              }`}
-            >
-              {filters.openNowOnly ? <X size={12} /> : <Sparkles size={12} />}
-              Open Now
-            </button>
-            <div className="text-[10px] text-muted font-medium ml-auto">
-              Sorted by: <span className="font-bold text-primary capitalize">{filters.sortBy}</span>
-            </div>
-          </div>
-
           {/* Horizontal Category Chips */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             {CATEGORIES.map((cat) => (
@@ -232,6 +217,13 @@ export const SalonListScreen: React.FC<SalonListScreenProps> = ({
             ))}
           </div>
         </header>
+
+        {/* Salon Discovery Filter Component: Sort, Distance & Price Range Filters */}
+        <SalonDiscoveryFilterBar
+          filters={filters}
+          onChangeFilters={setFilters}
+          totalResults={salons.length}
+        />
 
         {/* Search Autocomplete / Recent Suggestions Overlay */}
         {isSearchFocused && searchQuery.length === 0 && (

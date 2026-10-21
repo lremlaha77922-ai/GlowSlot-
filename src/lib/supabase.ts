@@ -14,10 +14,33 @@ export const isSupabaseConfigured = (): boolean => {
   );
 };
 
+const isConfigured = isSupabaseConfigured();
+
+const safeFetch: typeof fetch = async (input, init) => {
+  const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input);
+  if (!isSupabaseConfigured() || url.includes('placeholder.supabase.co') || url.includes('your-project.supabase.co')) {
+    return new Response(JSON.stringify({ error: 'Supabase unconfigured' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  try {
+    return await fetch(input, init);
+  } catch (err) {
+    return new Response(JSON.stringify({ error: 'Network error', details: String(err) }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
+    persistSession: isConfigured,
+    autoRefreshToken: isConfigured,
+    detectSessionInUrl: isConfigured,
+  },
+  global: {
+    fetch: safeFetch,
   },
 });
