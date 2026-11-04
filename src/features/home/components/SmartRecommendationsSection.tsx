@@ -15,6 +15,7 @@ import {
   Lightbulb,
   ArrowRight,
   Flame,
+  Wand2,
 } from 'lucide-react';
 import { Button } from '../../../components/Button';
 import { Skeleton } from '../../../components/Skeleton';
@@ -30,6 +31,8 @@ const CATEGORIES = [
   { id: 'Beard', label: 'Beard' },
   { id: 'Skin', label: 'Skin Glow' },
   { id: 'Spa', label: 'Scalp & Spa' },
+  { id: 'Hair Color & Highlights', label: 'Hair Color & Highlights' },
+  { id: 'Festive & Wedding', label: 'Jaipur Festive & Wedding' },
 ];
 
 export const SmartRecommendationsSection: React.FC<SmartRecommendationsSectionProps> = ({
@@ -177,16 +180,19 @@ export const SmartRecommendationsSection: React.FC<SmartRecommendationsSectionPr
               </div>
 
               {/* AI Context Reason Box */}
-              <div className="bg-primary-soft/40 p-2.5 rounded-button border border-primary/20 flex flex-col gap-1">
+              <div className="bg-primary-soft/40 p-2.5 rounded-button border border-primary/20 flex flex-col gap-1.5">
                 <div className="flex items-start gap-1.5 text-[11px] text-text font-medium leading-relaxed">
                   <Sparkles size={12} className="text-primary shrink-0 mt-0.5" />
                   <span>{item.reason}</span>
                 </div>
 
                 {item.stylistTip && (
-                  <div className="flex items-center gap-1 text-[10px] text-muted italic pt-1 border-t border-primary/10">
-                    <Lightbulb size={11} className="text-amber-500 shrink-0" />
-                    <span className="truncate">Tip: {item.stylistTip}</span>
+                  <div className="flex items-start gap-2 text-[11px] text-amber-900 dark:text-amber-100 bg-amber-500/15 p-2 rounded-button border border-amber-500/40 mt-1 shadow-2xs">
+                    <Wand2 size={14} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">Stylist Pro Tip</span>
+                      <span className="font-medium text-[11px] leading-tight mt-0.5">{item.stylistTip}</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -201,10 +207,9 @@ export const SmartRecommendationsSection: React.FC<SmartRecommendationsSectionPr
                 </div>
 
                 <Button
-                  variant="primary"
                   size="sm"
                   onClick={() => handleBook(item)}
-                  className="text-xs font-bold shadow-2xs group-hover:shadow-xs flex items-center gap-1"
+                  className="text-xs font-bold bg-gradient-to-r from-amber-600 via-primary to-rose-600 text-white shadow-sm hover:opacity-95 flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>Book Style</span>
                   <ArrowRight size={13} />

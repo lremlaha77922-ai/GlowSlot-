@@ -118,6 +118,42 @@ describe('AI Smart Recommendation System', () => {
     });
   });
 
+  it('filters recommendations by Hair Color & Highlights category', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          source: 'gemini-ai',
+          recommendations: [
+            {
+              id: 'rec-color-1',
+              title: 'Caramel Balayage & Root Melt',
+              category: 'Hair Color & Highlights',
+              suggestedSalon: 'Luxe Cut & Style Studio',
+              pricePaise: 349900,
+              durationMin: 90,
+              reason: 'Rich dimensional caramel tones.',
+              tag: 'TRENDING BALAYAGE',
+            },
+          ],
+        }),
+      })
+    );
+
+    const res = await recommendationService.getRecommendations({
+      userName: 'Aarav Sharma',
+      categoryFilter: 'Hair Color & Highlights',
+    });
+
+    expect(res.success).toBe(true);
+    expect(res.recommendations.length).toBeGreaterThan(0);
+    res.recommendations.forEach((item) => {
+      expect(item.category.toLowerCase()).toContain('hair color');
+    });
+  });
+
   it('handles server network failure gracefully by returning client heuristic recommendations', async () => {
     // Mock global fetch to simulate offline/failure
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
